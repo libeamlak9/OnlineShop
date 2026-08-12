@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -7,6 +8,8 @@ import { useApp } from '../../context/AppContext';
 import { getProductCoverImage } from '../../utils/images';
 import { RootStackParamList } from '../../types/navigation';
 import { colors, spacing, borderRadius, fontSizes } from '../../constants/theme';
+
+const MAX_WIDTH = 900;
 
 export function OrdersScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -22,55 +25,63 @@ export function OrdersScreen() {
 
   return (
     <Screen edges={['top', 'left', 'right']}>
-      <Text style={styles.title}>My Orders</Text>
-      <FlatList
-        data={orders}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => {
-          const firstItem = item.items[0];
-          const imageUri = firstItem ? getProductCoverImage(firstItem.product) : '';
-          const itemNames = item.items.map((i) => i.product.name).join(', ');
+      <View style={styles.container}>
+        <Text style={styles.title}>My Orders</Text>
+        <FlatList
+          data={orders}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => {
+            const firstItem = item.items[0];
+            const imageUri = firstItem ? getProductCoverImage(firstItem.product) : '';
+            const itemNames = item.items.map((i) => i.product.name).join(', ');
 
-          return (
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
-            >
-              <View style={styles.thumbnail}>
-                <Image source={{ uri: imageUri }} style={styles.thumbnailImage} resizeMode="contain" />
-              </View>
-              <View style={styles.info}>
-                <View style={styles.row}>
-                  <Text style={styles.name} numberOfLines={1}>
-                    {itemNames}
-                  </Text>
-                  <Text style={styles.price}>${item.total.toFixed(2)}</Text>
+            return (
+              <TouchableOpacity
+                style={styles.card}
+                onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
+              >
+                <View style={styles.thumbnail}>
+                  <Image source={{ uri: imageUri }} style={styles.thumbnailImage} resizeMode="contain" />
                 </View>
-                <View style={styles.row}>
-                  <Text style={styles.date}>
-                    {new Date(item.createdAt).toLocaleDateString()}
-                  </Text>
-                  <View
-                    style={[
-                      styles.badge,
-                      item.status === 'paid' && styles.paidBadge,
-                      item.status === 'pending' && styles.pendingBadge,
-                      item.status === 'delivered' && styles.deliveredBadge,
-                    ]}
-                  >
-                    <Text style={styles.badgeText}>{item.status}</Text>
+                <View style={styles.info}>
+                  <View style={styles.row}>
+                    <Text style={styles.name} numberOfLines={1}>
+                      {itemNames}
+                    </Text>
+                    <Text style={styles.price}>${item.total.toFixed(2)}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.date}>
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </Text>
+                    <View
+                      style={[
+                        styles.badge,
+                        item.status === 'paid' && styles.paidBadge,
+                        item.status === 'pending' && styles.pendingBadge,
+                        item.status === 'delivered' && styles.deliveredBadge,
+                      ]}
+                    >
+                      <Text style={styles.badgeText}>{item.status}</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          );
-        }}
-      />
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    maxWidth: MAX_WIDTH,
+    width: '100%',
+    alignSelf: 'center',
+  },
   title: {
     fontSize: fontSizes.xxl,
     fontWeight: '700',
@@ -86,6 +97,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+      },
+    }),
   },
   thumbnail: {
     width: 64,

@@ -1,6 +1,6 @@
 import {
-  Dimensions,
   Image,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -11,12 +11,6 @@ import { Product } from '../types';
 import { getProductCoverImage } from '../utils/images';
 import { colors, spacing, borderRadius, fontSizes } from '../constants/theme';
 
-const { width } = Dimensions.get('window');
-const CARD_MARGIN = 3;
-const COLUMNS = 2;
-const CARD_WIDTH = (width - spacing.sm * 2 - CARD_MARGIN * COLUMNS * 2) / COLUMNS;
-const IMAGE_ASPECT = 0.75; // portrait 3:4
-
 interface ProductCardProps {
   product: Product;
   onPress: () => void;
@@ -24,32 +18,23 @@ interface ProductCardProps {
   compact?: boolean;
 }
 
-export function ProductCard({
-  product,
-  onPress,
-  onAddToCart,
-  compact = false,
-}: ProductCardProps) {
+export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps) {
   const imageUri = getProductCoverImage(product);
 
   return (
     <TouchableOpacity
-      style={[styles.card, compact && styles.compactCard]}
+      style={styles.card}
       onPress={onPress}
       activeOpacity={0.9}
     >
-      <View style={[styles.imageContainer, compact && styles.compactImageContainer]}>
-        <Image
-          source={{ uri: imageUri }}
-          style={styles.image}
-          resizeMode="cover"
-        />
+      <View style={styles.imageContainer}>
+        <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
       </View>
       <View style={styles.content}>
         <Text style={styles.name} numberOfLines={1}>
           {product.name}
         </Text>
-        <Text style={styles.description} numberOfLines={1}>
+        <Text style={styles.description} numberOfLines={2}>
           {product.description}
         </Text>
         <View style={styles.footer}>
@@ -67,28 +52,27 @@ export function ProductCard({
 
 const styles = StyleSheet.create({
   card: {
+    flex: 1,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     overflow: 'hidden',
-    flex: 1,
-    margin: CARD_MARGIN,
+    margin: spacing.xs,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 3,
-  },
-  compactCard: {
-    width: CARD_WIDTH,
-    maxWidth: CARD_WIDTH,
+    ...(Platform.OS === 'web'
+      ? ({
+          cursor: 'pointer',
+          transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        } as any)
+      : {}),
   },
   imageContainer: {
     width: '100%',
-    aspectRatio: IMAGE_ASPECT,
+    aspectRatio: 1,
     backgroundColor: colors.background,
-  },
-  compactImageContainer: {
-    height: CARD_WIDTH / IMAGE_ASPECT,
   },
   image: {
     width: '100%',
@@ -106,6 +90,8 @@ const styles = StyleSheet.create({
   description: {
     fontSize: fontSizes.xs,
     color: colors.textSecondary,
+    lineHeight: 16,
+    minHeight: 32,
   },
   footer: {
     flexDirection: 'row',

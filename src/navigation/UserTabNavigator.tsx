@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { UserTabParamList } from '../types/navigation';
@@ -19,7 +20,7 @@ export function UserTabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarLabelPosition: 'below-icon',
-        tabBarStyle: {
+        tabBarStyle: Platform.OS === 'web' ? { display: 'none' } : {
           height: 50,
           paddingBottom: 4,
           paddingTop: 0,

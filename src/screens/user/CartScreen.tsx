@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
@@ -8,6 +9,8 @@ import { Button } from '../../components/Button';
 import { useApp } from '../../context/AppContext';
 import { RootStackParamList } from '../../types/navigation';
 import { colors, spacing, fontSizes } from '../../constants/theme';
+
+const MAX_WIDTH = 900;
 
 export function CartScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -41,19 +44,21 @@ export function CartScreen() {
         )}
       />
       <View style={styles.footer}>
-        <View style={styles.row}>
-          <Text style={styles.label}>Items</Text>
-          <Text style={styles.value}>{cartCount}</Text>
+        <View style={styles.footerInner}>
+          <View style={styles.row}>
+            <Text style={styles.label}>Items</Text>
+            <Text style={styles.value}>{cartCount}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.totalLabel}>Total</Text>
+            <Text style={styles.totalValue}>${cartTotal.toFixed(2)}</Text>
+          </View>
+          <Button
+            title="Proceed to Checkout"
+            onPress={() => navigation.navigate('Checkout')}
+            style={styles.checkoutButton}
+          />
         </View>
-        <View style={styles.row}>
-          <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalValue}>${cartTotal.toFixed(2)}</Text>
-        </View>
-        <Button
-          title="Proceed to Checkout"
-          onPress={() => navigation.navigate('Checkout')}
-          style={styles.checkoutButton}
-        />
       </View>
     </Screen>
   );
@@ -63,18 +68,34 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 200,
+    paddingBottom: Platform.OS === 'web' ? 24 : 200,
+    maxWidth: MAX_WIDTH,
+    width: '100%',
+    alignSelf: 'center',
+    flexGrow: 1,
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    ...Platform.select({
+      default: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+      },
+      web: {
+        position: 'relative',
+      },
+    }),
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     paddingHorizontal: 16,
     paddingVertical: 16,
+  },
+  footerInner: {
+    maxWidth: MAX_WIDTH,
+    width: '100%',
+    alignSelf: 'center',
     gap: 8,
   },
   row: {
