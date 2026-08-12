@@ -1,0 +1,45 @@
+export const colors = {
+  background: '#F8F9FA',
+  surface: '#FFFFFF',
+  text: '#1A1A1A',
+  textSecondary: '#6C757D',
+  primary: '#007AFF',
+  primaryDark: '#0056B3',
+  price: '#E53935',
+  border: '#DEE2E6',
+  danger: '#DC3545',
+  success: '#28A745',
+  warning: '#FFC107',
+  shadow: '#000000',
+};
+
+export const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
+};
+
+export const fontSizes = {
+  xs: 12,
+  sm: 14,
+  md: 16,
+  lg: 18,
+  xl: 22,
+  xxl: 28,
+};
+
+export const borderRadius = {
+  sm: 6,
+  md: 10,
+  lg: 16,
+  xl: 24,
+};
+
+export const breakpoints = {
+  sm: 360,
+  md: 768,
+  lg: 1024,
+};

@@ -1,0 +1,6 @@
+@echo off
+echo Starting Student Shop Expo dev server...
+echo.
+cd /d "%~dp0"
+call npm start
+pause
