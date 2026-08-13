@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
+  Dimensions,
   Modal,
   ScrollView,
   StyleSheet,
@@ -31,6 +32,13 @@ export function CategoryFilter({
 }: CategoryFilterProps) {
   const { categories } = useApp();
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [moreLayout, setMoreLayout] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const moreButtonRef = useRef<View>(null);
 
   const visibleCategories = categories.slice(0, VISIBLE_COUNT);
   const hiddenCategories = categories.slice(VISIBLE_COUNT);
@@ -87,12 +95,19 @@ export function CategoryFilter({
         ))}
 
         {hiddenCategories.length > 0 && (
-          <TouchableOpacity
-            style={[styles.chip, styles.moreChip]}
-            onPress={() => setDropdownVisible(true)}
-          >
-            <Text style={[styles.text, styles.moreText]}>More ▼</Text>
-          </TouchableOpacity>
+          <View ref={moreButtonRef} collapsable={false}>
+            <TouchableOpacity
+              style={[styles.chip, styles.moreChip]}
+              onPress={() => {
+                moreButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
+                  setMoreLayout({ x: pageX, y: pageY, width, height });
+                  setDropdownVisible(true);
+                });
+              }}
+            >
+              <Text style={[styles.text, styles.moreText]}>More ▼</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </ScrollView>
 
@@ -104,7 +119,18 @@ export function CategoryFilter({
       >
         <TouchableWithoutFeedback onPress={() => setDropdownVisible(false)}>
           <View style={styles.dropdownOverlay}>
-            <View style={styles.dropdown}>
+            <View
+              style={[
+                styles.dropdown,
+                moreLayout && {
+                  position: 'absolute',
+                  top: moreLayout.y + moreLayout.height + 4,
+                  right:
+                    Dimensions.get('window').width -
+                    (moreLayout.x + moreLayout.width),
+                },
+              ]}
+            >
               {categories.map((category) => (
                 <TouchableOpacity
                   key={category}
@@ -175,10 +201,6 @@ const styles = StyleSheet.create({
   dropdownOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.2)',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
-    paddingTop: 60,
-    paddingRight: spacing.lg,
   },
   dropdown: {
     backgroundColor: colors.surface,

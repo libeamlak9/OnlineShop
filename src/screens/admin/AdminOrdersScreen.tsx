@@ -1,12 +1,16 @@
+import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Screen } from '../../components/Screen';
 import { EmptyState } from '../../components/EmptyState';
+import { AdminHeader } from '../../components/AdminHeader';
 import { useApp } from '../../context/AppContext';
 import { AdminStackParamList } from '../../types/navigation';
 import { Order } from '../../types';
 import { colors, spacing, borderRadius, fontSizes } from '../../constants/theme';
+
+const MAX_WIDTH = 1000;
 
 interface UserOrderGroup {
   phoneNumber: string;
@@ -45,50 +49,68 @@ export function AdminOrdersScreen() {
     (a, b) => b.latestDate.getTime() - a.latestDate.getTime()
   );
 
+  const isWeb = Platform.OS === 'web';
+
   if (userGroups.length === 0) {
     return (
-      <Screen>
-        <EmptyState message="No orders yet." icon="receipt-outline" />
-      </Screen>
+      <>
+        {isWeb && <AdminHeader />}
+        <Screen>
+          <EmptyState message="No orders yet." icon="receipt-outline" />
+        </Screen>
+      </>
     );
   }
 
   return (
-    <Screen>
-      <Text style={styles.title}>Orders by Customer</Text>
-      <FlatList
-        data={userGroups}
-        keyExtractor={(item) => item.phoneNumber}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() =>
-              navigation.navigate('AdminUserOrders', { phoneNumber: item.phoneNumber })
-            }
-          >
-            <View style={styles.cardHeader}>
-              <Text style={styles.phoneNumber} numberOfLines={1}>
-                {item.phoneNumber}
-              </Text>
-              <Text style={styles.orderCount}>
-                {item.count} order{item.count === 1 ? '' : 's'}
-              </Text>
-            </View>
+    <>
+      {isWeb && <AdminHeader />}
+      <Screen noPadding edges={['top', 'left', 'right']}>
+        <View style={styles.container}>
+        <Text style={styles.title}>Orders by Customer</Text>
+        <FlatList
+          data={userGroups}
+          keyExtractor={(item) => item.phoneNumber}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() =>
+                navigation.navigate('AdminUserOrders', { phoneNumber: item.phoneNumber })
+              }
+            >
+              <View style={styles.cardHeader}>
+                <Text style={styles.phoneNumber} numberOfLines={1}>
+                  {item.phoneNumber}
+                </Text>
+                <Text style={styles.orderCount}>
+                  {item.count} order{item.count === 1 ? '' : 's'}
+                </Text>
+              </View>
 
-            <View style={styles.cardFooter}>
-              <Text style={styles.total}>${item.total.toFixed(2)}</Text>
-              <Text style={styles.date}>
-                Last order: {item.latestDate.toLocaleDateString()}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+              <View style={styles.cardFooter}>
+                <Text style={styles.total}>${item.total.toFixed(2)}</Text>
+                <Text style={styles.date}>
+                  Last order: {item.latestDate.toLocaleDateString()}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      </View>
     </Screen>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    maxWidth: MAX_WIDTH,
+    width: '100%',
+    alignSelf: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
   title: {
     fontSize: fontSizes.xxl,
     fontWeight: '700',
@@ -102,6 +124,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
+    ...(Platform.OS === 'web'
+      ? ({
+          cursor: 'pointer',
+          transition: 'box-shadow 0.15s ease',
+        } as any)
+      : {}),
   },
   cardHeader: {
     flexDirection: 'row',

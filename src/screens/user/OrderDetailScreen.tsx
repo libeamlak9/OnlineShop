@@ -1,97 +1,159 @@
-import { useRoute } from '@react-navigation/native';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components/Screen';
 import { EmptyState } from '../../components/EmptyState';
+import { WebHeader } from '../../components/WebHeader';
 import { useApp } from '../../context/AppContext';
+import { RootStackParamList } from '../../types/navigation';
 import { colors, spacing, borderRadius, fontSizes } from '../../constants/theme';
+
+const MAX_WIDTH = 900;
 
 export function OrderDetailScreen() {
   const route = useRoute();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { orderId } = route.params as { orderId: string };
   const { orders } = useApp();
 
   const order = orders.find((o) => o.id === orderId);
+  const isWeb = Platform.OS === 'web';
 
   if (!order) {
     return (
-      <Screen>
-        <EmptyState message="Order not found." icon="alert-circle-outline" />
-      </Screen>
+      <>
+        {isWeb && <WebHeader showSearch={false} />}
+        <Screen>
+          <EmptyState message="Order not found." icon="alert-circle-outline" />
+        </Screen>
+      </>
     );
   }
 
   return (
-    <Screen scroll>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.orderId}>Order Details</Text>
-          <Text style={styles.date}>
-            {new Date(order.createdAt).toLocaleString()}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.badge,
-            order.status === 'paid' && styles.paidBadge,
-            order.status === 'pending' && styles.pendingBadge,
-            order.status === 'delivered' && styles.deliveredBadge,
-          ]}
-        >
-          <Text style={styles.badgeText}>{order.status}</Text>
-        </View>
-      </View>
+    <>
+      {isWeb && <WebHeader showSearch={false} />}
+      <Screen noPadding edges={['top', 'left', 'right']}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.container}>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>Order Details</Text>
+            {isWeb && (
+              <TouchableOpacity
+                style={styles.homeLink}
+                onPress={() => navigation.navigate('UserTabs', { screen: 'Home' })}
+              >
+                <Ionicons name="arrow-back" size={16} color={colors.primary} />
+                <Text style={styles.homeLinkText}>Continue Shopping</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Items</Text>
-        {order.items.map((item) => (
-          <View key={item.product.id} style={styles.itemRow}>
-            <Text style={styles.itemName}>
-              {item.quantity} × {item.product.name}
-            </Text>
-            <Text style={styles.itemPrice}>
-              ${(item.product.price * item.quantity).toFixed(2)}
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.date}>
+                {new Date(order.createdAt).toLocaleString()}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.badge,
+                order.status === 'paid' && styles.paidBadge,
+                order.status === 'pending' && styles.pendingBadge,
+                order.status === 'delivered' && styles.deliveredBadge,
+              ]}
+            >
+              <Text style={styles.badgeText}>{order.status}</Text>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Items</Text>
+            {order.items.map((item) => (
+              <View key={item.product.id} style={styles.itemRow}>
+                <Text style={styles.itemName}>
+                  {item.quantity} × {item.product.name}
+                </Text>
+                <Text style={styles.itemPrice}>
+                  ${(item.product.price * item.quantity).toFixed(2)}
+                </Text>
+              </View>
+            ))}
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalValue}>${order.total.toFixed(2)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Delivery Location</Text>
+            <Text style={styles.paymentText}>{order.location || 'Not provided'}</Text>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Phone Number</Text>
+            <Text style={styles.paymentText}>{order.phoneNumber || 'Not provided'}</Text>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Payment</Text>
+            <Text style={styles.paymentText}>
+              {order.paymentMethod === 'cash_on_delivery'
+                ? 'Cash on Delivery'
+                : 'Paid Online'}
             </Text>
           </View>
-        ))}
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalValue}>${order.total.toFixed(2)}</Text>
         </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Delivery Location</Text>
-        <Text style={styles.paymentText}>{order.location || 'Not provided'}</Text>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Phone Number</Text>
-        <Text style={styles.paymentText}>{order.phoneNumber || 'Not provided'}</Text>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Payment</Text>
-        <Text style={styles.paymentText}>
-          {order.paymentMethod === 'cash_on_delivery'
-            ? 'Cash on Delivery'
-            : 'Paid Online'}
-        </Text>
-      </View>
+      </ScrollView>
     </Screen>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  container: {
+    flex: 1,
+    maxWidth: MAX_WIDTH,
+    width: '100%',
+    alignSelf: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingBottom: spacing.xxl,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  title: {
+    fontSize: fontSizes.xxl,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  homeLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  homeLinkText: {
+    fontSize: fontSizes.md,
+    color: colors.primary,
+    fontWeight: '600',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: spacing.lg,
-  },
-  orderId: {
-    fontSize: fontSizes.xl,
-    fontWeight: '700',
-    color: colors.text,
   },
   date: {
     fontSize: fontSizes.sm,

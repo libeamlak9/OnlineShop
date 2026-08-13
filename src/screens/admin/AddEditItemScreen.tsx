@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,17 +18,22 @@ import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components/Screen';
 import { Button } from '../../components/Button';
+import { AdminHeader } from '../../components/AdminHeader';
 import { useApp } from '../../context/AppContext';
+import { useResponsive } from '../../hooks/useResponsive';
 import { AdminStackParamList } from '../../types/navigation';
 import { getProductCoverImage, resizeImage } from '../../utils/images';
 import { Category, Product } from '../../types';
 import { colors, spacing, borderRadius, fontSizes } from '../../constants/theme';
+
+const MAX_WIDTH = 800;
 
 export function AddEditItemScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AdminStackParamList>>();
   const route = useRoute();
   const { productId } = (route.params as { productId?: string }) ?? {};
   const { products, categories, addProduct, updateProduct } = useApp();
+  const { isDesktop } = useResponsive();
 
   const existing = productId ? products.find((p) => p.id === productId) : undefined;
 
@@ -117,130 +123,173 @@ export function AddEditItemScreen() {
     createdAt: existing?.createdAt ?? new Date().toISOString(),
   };
   const coverUri = getProductCoverImage(previewProduct);
+  const isWeb = Platform.OS === 'web';
 
   return (
-    <Screen>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>{existing ? 'Edit Item' : 'Add New Item'}</Text>
+    <>
+      {isWeb && <AdminHeader />}
+      <Screen noPadding edges={['top', 'left', 'right']}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.container}>
+          <Text style={styles.title}>{existing ? 'Edit Item' : 'Add New Item'}</Text>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Product Images</Text>
-          <TouchableOpacity style={styles.coverPicker} onPress={pickImages}>
-            <Image source={{ uri: coverUri }} style={styles.coverImage} resizeMode="contain" />
-            <View style={styles.imageOverlay}>
-              <Ionicons name="camera-outline" size={28} color={colors.surface} />
-              <Text style={styles.imageOverlayText}>
-                {images.length > 0 ? 'Add More Images' : 'Add Images'}
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          {images.length > 0 && (
-            <FlatList
-              data={images}
-              horizontal
-              keyExtractor={(_, index) => index.toString()}
-              contentContainerStyle={styles.thumbnailList}
-              showsHorizontalScrollIndicator={false}
-              renderItem={({ item, index }) => (
-                <View
+          <View style={styles.field}>
+            <Text style={styles.label}>Product Images</Text>
+            <TouchableOpacity
+              style={[
+                styles.coverPicker,
+                images.length > 0 && styles.coverPickerWithImage,
+              ]}
+              onPress={pickImages}
+            >
+              <Image source={{ uri: coverUri }} style={styles.coverImage} resizeMode="contain" />
+              <View
+                style={[
+                  styles.imageOverlay,
+                  images.length > 0 && styles.imageOverlaySubtle,
+                ]}
+              >
+                <Ionicons
+                  name="camera-outline"
+                  size={28}
+                  color={images.length > 0 ? colors.primary : colors.surface}
+                />
+                <Text
                   style={[
-                    styles.thumbnailContainer,
-                    index === coverImageIndex && styles.thumbnailContainerActive,
+                    styles.imageOverlayText,
+                    images.length > 0 && styles.imageOverlayTextDark,
                   ]}
                 >
-                  <TouchableOpacity onPress={() => setCoverImageIndex(index)}>
-                    <Image source={{ uri: item }} style={styles.thumbnail} resizeMode="cover" />
-                  </TouchableOpacity>
-                  {index === coverImageIndex && (
-                    <View style={styles.coverBadge}>
-                      <Text style={styles.coverBadgeText}>Cover</Text>
-                    </View>
-                  )}
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removeImage(index)}
+                  {images.length > 0 ? 'Add More Images' : 'Add Images'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {images.length > 0 && (
+              <FlatList
+                data={images}
+                horizontal
+                keyExtractor={(_, index) => index.toString()}
+                contentContainerStyle={styles.thumbnailList}
+                showsHorizontalScrollIndicator={false}
+                renderItem={({ item, index }) => (
+                  <View
+                    style={[
+                      styles.thumbnailContainer,
+                      index === coverImageIndex && styles.thumbnailContainerActive,
+                    ]}
                   >
-                    <Ionicons name="close-circle" size={22} color={colors.danger} />
-                  </TouchableOpacity>
-                </View>
-              )}
-            />
-          )}
-        </View>
+                    <TouchableOpacity onPress={() => setCoverImageIndex(index)}>
+                      <Image source={{ uri: item }} style={styles.thumbnail} resizeMode="cover" />
+                    </TouchableOpacity>
+                    {index === coverImageIndex && (
+                      <View style={styles.coverBadge}>
+                        <Text style={styles.coverBadgeText}>Cover</Text>
+                      </View>
+                    )}
+                    <TouchableOpacity
+                      style={styles.removeButton}
+                      onPress={() => removeImage(index)}
+                    >
+                      <Ionicons name="close-circle" size={22} color={colors.danger} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              />
+            )}
+          </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Name</Text>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="Item name"
+          <View style={[styles.row, isDesktop && styles.rowDesktop]}>
+            <View style={[styles.field, styles.flex]}>
+              <Text style={styles.label}>Name</Text>
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="Item name"
+              />
+            </View>
+
+            <View style={[styles.field, styles.flex]}>
+              <Text style={styles.label}>Category</Text>
+              <View style={styles.picker}>
+                <Picker
+                  selectedValue={category}
+                  onValueChange={(itemValue) => setCategory(itemValue as Category)}
+                >
+                  {categories.map((cat) => (
+                    <Picker.Item key={cat} label={cat} value={cat} />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Description</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Item description"
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+          </View>
+
+          <View style={[styles.row, isDesktop && styles.rowDesktop]}>
+            <View style={[styles.field, styles.flex]}>
+              <Text style={styles.label}>Price ($)</Text>
+              <TextInput
+                style={styles.input}
+                value={price}
+                onChangeText={setPrice}
+                placeholder="0.00"
+                keyboardType="decimal-pad"
+              />
+            </View>
+            <View style={[styles.field, styles.flex]}>
+              <Text style={styles.label}>Stock</Text>
+              <TextInput
+                style={styles.input}
+                value={stock}
+                onChangeText={setStock}
+                placeholder="0"
+                keyboardType="number-pad"
+              />
+            </View>
+          </View>
+
+          <Button
+            title={existing ? 'Update Item' : 'Add Item'}
+            onPress={handleSave}
+            disabled={!isValid}
+            style={styles.saveButton}
           />
         </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Description</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Item description"
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-        </View>
-
-        <View style={styles.row}>
-          <View style={[styles.field, styles.half]}>
-            <Text style={styles.label}>Price ($)</Text>
-            <TextInput
-              style={styles.input}
-              value={price}
-              onChangeText={setPrice}
-              placeholder="0.00"
-              keyboardType="decimal-pad"
-            />
-          </View>
-          <View style={[styles.field, styles.half]}>
-            <Text style={styles.label}>Stock</Text>
-            <TextInput
-              style={styles.input}
-              value={stock}
-              onChangeText={setStock}
-              placeholder="0"
-              keyboardType="number-pad"
-            />
-          </View>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Category</Text>
-          <View style={styles.picker}>
-            <Picker
-              selectedValue={category}
-              onValueChange={(itemValue) => setCategory(itemValue as Category)}
-            >
-              {categories.map((cat) => (
-                <Picker.Item key={cat} label={cat} value={cat} />
-              ))}
-            </Picker>
-          </View>
-        </View>
-
-        <Button
-          title={existing ? 'Update Item' : 'Add Item'}
-          onPress={handleSave}
-          disabled={!isValid}
-          style={styles.saveButton}
-        />
       </ScrollView>
     </Screen>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  container: {
+    flex: 1,
+    maxWidth: MAX_WIDTH,
+    width: '100%',
+    alignSelf: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingBottom: spacing.xxl,
+  },
   title: {
     fontSize: fontSizes.xxl,
     fontWeight: '700',
@@ -250,6 +299,9 @@ const styles = StyleSheet.create({
   field: {
     marginBottom: spacing.lg,
   },
+  flex: {
+    flex: 1,
+  },
   label: {
     fontSize: fontSizes.md,
     fontWeight: '600',
@@ -258,11 +310,25 @@ const styles = StyleSheet.create({
   },
   coverPicker: {
     width: '100%',
-    height: 200,
+    height: 280,
     borderRadius: borderRadius.md,
     overflow: 'hidden',
     backgroundColor: colors.background,
     position: 'relative',
+    ...(Platform.OS === 'web'
+      ? ({
+          height: 420,
+        } as any)
+      : {}),
+  },
+  coverPickerWithImage: {
+    ...(Platform.OS === 'web'
+      ? ({
+          height: 520,
+        } as any)
+      : {
+          height: 360,
+        }),
   },
   coverImage: {
     width: '100%',
@@ -274,11 +340,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  imageOverlaySubtle: {
+    backgroundColor: 'rgba(255,255,255,0.72)',
+  },
   imageOverlayText: {
     color: colors.surface,
     fontSize: fontSizes.md,
     fontWeight: '600',
     marginTop: spacing.xs,
+  },
+  imageOverlayTextDark: {
+    color: colors.text,
   },
   thumbnailList: {
     gap: spacing.sm,
@@ -337,11 +409,10 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   row: {
-    flexDirection: 'row',
     gap: spacing.md,
   },
-  half: {
-    flex: 1,
+  rowDesktop: {
+    flexDirection: 'row',
   },
   picker: {
     backgroundColor: colors.surface,
@@ -352,6 +423,5 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: spacing.md,
-    marginBottom: spacing.xxl,
   },
 });

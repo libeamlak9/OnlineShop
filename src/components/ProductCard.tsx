@@ -28,7 +28,7 @@ export function ProductCard({ product, onPress, onAddToCart }: ProductCardProps)
       activeOpacity={0.9}
     >
       <View style={styles.imageContainer}>
-        <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
+        <Image source={{ uri: imageUri }} style={styles.image} resizeMode="contain" />
       </View>
       <View style={styles.content}>
         <Text style={styles.name} numberOfLines={1}>

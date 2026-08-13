@@ -2,8 +2,10 @@ import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components/Screen';
 import { EmptyState } from '../../components/EmptyState';
+import { WebHeader } from '../../components/WebHeader';
 import { useApp } from '../../context/AppContext';
 import { getProductCoverImage } from '../../utils/images';
 import { RootStackParamList } from '../../types/navigation';
@@ -15,18 +17,37 @@ export function OrdersScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { orders } = useApp();
 
+  const isWeb = Platform.OS === 'web';
+
   if (orders.length === 0) {
     return (
-      <Screen>
-        <EmptyState message="No orders yet." icon="receipt-outline" />
-      </Screen>
+      <>
+        {isWeb && <WebHeader showSearch={false} />}
+        <Screen>
+          <EmptyState message="No orders yet." icon="receipt-outline" />
+        </Screen>
+      </>
     );
   }
 
   return (
-    <Screen edges={['top', 'left', 'right']}>
-      <View style={styles.container}>
-        <Text style={styles.title}>My Orders</Text>
+    <>
+      {isWeb && <WebHeader showSearch={false} />}
+      <Screen noPadding edges={['top', 'left', 'right']}>
+        <View style={styles.container}>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>My Orders</Text>
+          {isWeb && (
+            <TouchableOpacity
+              style={styles.homeLink}
+              onPress={() => navigation.navigate('UserTabs', { screen: 'Home' })}
+            >
+              <Ionicons name="arrow-back" size={16} color={colors.primary} />
+              <Text style={styles.homeLinkText}>Continue Shopping</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         <FlatList
           data={orders}
           keyExtractor={(item) => item.id}
@@ -72,6 +93,7 @@ export function OrdersScreen() {
         />
       </View>
     </Screen>
+    </>
   );
 }
 
@@ -81,12 +103,29 @@ const styles = StyleSheet.create({
     maxWidth: MAX_WIDTH,
     width: '100%',
     alignSelf: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   title: {
     fontSize: fontSizes.xxl,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: spacing.lg,
+  },
+  homeLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  homeLinkText: {
+    fontSize: fontSizes.md,
+    color: colors.primary,
+    fontWeight: '600',
   },
   card: {
     flexDirection: 'row',
@@ -97,11 +136,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    ...Platform.select({
-      web: {
-        cursor: 'pointer',
-      },
-    }),
+    ...(Platform.OS === 'web'
+      ? ({
+          cursor: 'pointer',
+        } as any)
+      : {}),
   },
   thumbnail: {
     width: 64,

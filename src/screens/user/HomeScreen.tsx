@@ -12,8 +12,12 @@ import { WebHeader } from '../../components/WebHeader';
 import { useApp } from '../../context/AppContext';
 import { useResponsive } from '../../hooks/useResponsive';
 import { RootStackParamList } from '../../types/navigation';
-import { Category } from '../../types';
+import { Category, Product } from '../../types';
 import { colors, spacing, borderRadius, fontSizes } from '../../constants/theme';
+
+const MAX_CONTENT_WIDTH = 1200;
+
+type ListItem = Product | { id: string; filler: true };
 
 export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -46,36 +50,29 @@ export function HomeScreen() {
   }, [products, selectedCategory, query, newArrivalsOnly]);
 
   const numColumns = breakpoint === 'lg' ? 4 : breakpoint === 'md' ? 3 : 2;
+
+  const listData = useMemo<ListItem[]>(() => {
+    const remainder = filtered.length % numColumns;
+    if (remainder === 0) return filtered;
+    const fillers: ListItem[] = Array.from({ length: numColumns - remainder }, (_, i) => ({
+      id: `filler-${i}`,
+      filler: true as const,
+    }));
+    return [...filtered, ...fillers];
+  }, [filtered, numColumns]);
+
   const isWeb = Platform.OS === 'web';
   const showInlineSearch = !isWeb || !isDesktop;
 
   return (
-    <Screen noPadding edges={['top', 'left', 'right']}>
+    <>
       {isWeb && <WebHeader searchValue={query} onSearchChange={setQuery} />}
-
-      <View style={styles.content}>
+      <Screen noPadding edges={['top', 'left', 'right']}>
+        <View style={styles.content}>
         {!isWeb && (
           <View style={styles.topBar}>
             <TouchableOpacity onPress={() => setRole(null)}>
               <Text style={styles.switchRole}>Switch role</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {isWeb && (
-          <View style={styles.hero}>
-            <Text style={styles.heroTitle}>Welcome to Student Shop</Text>
-            <Text style={styles.heroSubtitle}>
-              School uniforms, stationery, books, and more — all in one place.
-            </Text>
-            <TouchableOpacity
-              style={styles.heroButton}
-              onPress={() => {
-                setSelectedCategory(null);
-                setNewArrivalsOnly(false);
-              }}
-            >
-              <Text style={styles.heroButtonText}>Shop Now</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -101,22 +98,27 @@ export function HomeScreen() {
 
         <FlatList
           key={numColumns}
-          data={filtered}
+          data={listData}
           keyExtractor={(item) => item.id}
           numColumns={numColumns}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <EmptyState message="No items found. Try a different search or category." />
           }
-          renderItem={({ item }) => (
-            <ProductCard
-              product={item}
-              onPress={() =>
-                navigation.navigate('ProductDetail', { productId: item.id })
-              }
-              onAddToCart={() => addToCart(item)}
-            />
-          )}
+          renderItem={({ item }) => {
+            if ('filler' in item) {
+              return <View style={styles.filler} />;
+            }
+            return (
+              <ProductCard
+                product={item}
+                onPress={() =>
+                  navigation.navigate('ProductDetail', { productId: item.id })
+                }
+                onAddToCart={() => addToCart(item)}
+              />
+            );
+          }}
         />
       </View>
 
@@ -131,13 +133,14 @@ export function HomeScreen() {
         </View>
       )}
     </Screen>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
     flex: 1,
-    maxWidth: 1200,
+    maxWidth: MAX_CONTENT_WIDTH,
     width: '100%',
     alignSelf: 'center',
   },
@@ -153,47 +156,6 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
-  hero: {
-    width: '100%',
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.xxl,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-    alignItems: 'center',
-    ...Platform.select({
-      web: {
-        borderRadius: borderRadius.lg,
-        marginHorizontal: spacing.lg,
-        marginTop: spacing.lg,
-      },
-    }),
-  },
-  heroTitle: {
-    fontSize: fontSizes.xxl,
-    fontWeight: '800',
-    color: colors.surface,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  heroSubtitle: {
-    fontSize: fontSizes.md,
-    color: colors.surface,
-    textAlign: 'center',
-    opacity: 0.9,
-    marginBottom: spacing.lg,
-    maxWidth: 500,
-  },
-  heroButton: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.xl,
-  },
-  heroButtonText: {
-    color: colors.primary,
-    fontSize: fontSizes.md,
-    fontWeight: '700',
-  },
   filterSection: {
     paddingHorizontal: spacing.lg,
   },
@@ -205,6 +167,11 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     flexGrow: 1,
   },
+  filler: {
+    flex: 1,
+    margin: spacing.xs,
+    backgroundColor: 'transparent',
+  },
   footer: {
     width: '100%',
     borderTopWidth: 1,
@@ -215,7 +182,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    maxWidth: 1200,
+    maxWidth: MAX_CONTENT_WIDTH,
     alignSelf: 'center',
   },
   footerText: {

@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -7,28 +8,33 @@ import {
   Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Screen } from '../../components/Screen';
 import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
 import { useApp } from '../../context/AppContext';
+import { useResponsive } from '../../hooks/useResponsive';
 import { getProductGalleryImages } from '../../utils/images';
 import { RootStackParamList } from '../../types/navigation';
 import { colors, spacing, borderRadius, fontSizes } from '../../constants/theme';
 
-const { width } = Dimensions.get('window');
-const IMAGE_HEIGHT = width * 0.65;
+const PHONE_IMAGE_HEIGHT_RATIO = 0.65;
+const MAX_WIDTH = 1200;
 
 export function ProductDetailScreen() {
   const route = useRoute();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { productId } = route.params as { productId: string };
   const { products, addToCart } = useApp();
+  const { isDesktop } = useResponsive();
+  const { width: windowWidth } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
-  const flatListRef = useRef<FlatList<string>>(null);
 
   const product = products.find((p) => p.id === productId);
 
@@ -40,73 +46,39 @@ export function ProductDetailScreen() {
     );
   }
 
-  const galleryImages = getProductGalleryImages(product);
+  const galleryImages = useMemo(() => getProductGalleryImages(product), [product]);
   const outOfStock = product.stock <= 0;
+  const isWebDesktop = Platform.OS === 'web' && isDesktop;
 
+  const phoneImageHeight = windowWidth * PHONE_IMAGE_HEIGHT_RATIO;
 
   function handleScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
-    const index = Math.round(event.nativeEvent.contentOffset.x / width);
+    const index = Math.round(event.nativeEvent.contentOffset.x / windowWidth);
     setActiveIndex(Math.min(Math.max(index, 0), galleryImages.length - 1));
   }
 
-  function renderImage({ item }: { item: string }) {
-    return (
-      <View style={styles.imageSlide}>
-        <Image source={{ uri: item }} style={styles.image} resizeMode="contain" />
+  const infoSection = (
+    <View style={styles.info}>
+      <View style={styles.headerRow}>
+        <Text style={styles.name} numberOfLines={2}>
+          {product.name}
+        </Text>
+        <Text style={styles.price}>${product.price.toFixed(2)}</Text>
       </View>
-    );
-  }
 
-  return (
-    <Screen scroll noPadding edges={['top', 'left', 'right']}>
-      <View style={styles.galleryContainer}>
-        <FlatList
-          ref={flatListRef}
-          data={galleryImages}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={width}
-          decelerationRate="fast"
-          bounces={false}
-          keyExtractor={(_, index) => `gallery-${index}`}
-          onMomentumScrollEnd={handleScroll}
-          renderItem={renderImage}
-          getItemLayout={(_, index) => ({
-            length: width,
-            offset: width * index,
-            index,
-          })}
-        />
-        {galleryImages.length > 1 && (
-          <View style={styles.dots}>
-            {galleryImages.map((_, index) => (
-              <View
-                key={index}
-                style={[styles.dot, index === activeIndex && styles.activeDot]}
-              />
-            ))}
+      <View style={styles.metaRow}>
+        <Text style={styles.category}>{product.category}</Text>
+        {outOfStock && (
+          <View style={styles.outOfStockBadge}>
+            <Text style={styles.outOfStockText}>Out of stock</Text>
           </View>
         )}
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.headerRow}>
-          <Text style={styles.name} numberOfLines={1}>
-            {product.name}
-          </Text>
-          <Text style={styles.price}>${product.price.toFixed(2)}</Text>
-        </View>
+      <View style={styles.divider} />
 
-        <View style={styles.metaRow}>
-          <Text style={styles.category}>{product.category}</Text>
-        </View>
-
-        <View style={styles.divider} />
-
-        <Text style={styles.sectionTitle}>Description</Text>
-        <Text style={styles.description}>{product.description}</Text>
-      </View>
+      <Text style={styles.sectionTitle}>Description</Text>
+      <Text style={styles.description}>{product.description}</Text>
 
       <View style={styles.actions}>
         <Button
@@ -129,20 +101,150 @@ export function ProductDetailScreen() {
           style={styles.actionButton}
         />
       </View>
+    </View>
+  );
+
+  if (isWebDesktop) {
+    return (
+      <Screen noPadding edges={['top', 'left', 'right']}>
+        <ScrollView contentContainerStyle={styles.desktopScroll}>
+          <View style={styles.desktopInner}>
+            <View style={styles.desktopGallery}>
+              <View style={styles.desktopMainImage}>
+                <Image
+                  source={{ uri: galleryImages[activeIndex] }}
+                  style={styles.desktopImage}
+                  resizeMode="contain"
+                />
+              </View>
+              {galleryImages.length > 1 && (
+                <View style={styles.thumbnailRow}>
+                  {galleryImages.map((uri, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.thumbnailButton,
+                        index === activeIndex && styles.thumbnailButtonActive,
+                      ]}
+                      onPress={() => setActiveIndex(index)}
+                    >
+                      <Image
+                        source={{ uri }}
+                        style={styles.thumbnailImage}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+            {infoSection}
+          </View>
+        </ScrollView>
+      </Screen>
+    );
+  }
+
+  const gallerySection = (
+    <View style={[styles.galleryContainer, { height: phoneImageHeight }]}>
+      <FlatList
+        data={galleryImages}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={windowWidth}
+        decelerationRate="fast"
+        bounces={false}
+        keyExtractor={(_, index) => `gallery-${index}`}
+        onMomentumScrollEnd={handleScroll}
+        renderItem={({ item }) => (
+          <View style={[styles.imageSlide, { width: windowWidth, height: phoneImageHeight }]}>
+            <Image source={{ uri: item }} style={styles.image} resizeMode="contain" />
+          </View>
+        )}
+        getItemLayout={(_, index) => ({
+          length: windowWidth,
+          offset: windowWidth * index,
+          index,
+        })}
+      />
+      {galleryImages.length > 1 && (
+        <View style={styles.dots}>
+          {galleryImages.map((_, index) => (
+            <View
+              key={index}
+              style={[styles.dot, index === activeIndex && styles.activeDot]}
+            />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+
+  return (
+    <Screen scroll noPadding edges={['top', 'left', 'right']}>
+      {gallerySection}
+      {infoSection}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  desktopScroll: {
+    flexGrow: 1,
+    backgroundColor: colors.surface,
+  },
+  desktopInner: {
+    flex: 1,
+    flexDirection: 'row',
+    maxWidth: MAX_WIDTH,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  desktopGallery: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: spacing.lg,
+    gap: spacing.lg,
+  },
+  desktopMainImage: {
+    flex: 1,
+    minHeight: 420,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  desktopImage: {
+    width: '100%',
+    height: '100%',
+  },
+  thumbnailRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    flexWrap: 'wrap',
+  },
+  thumbnailButton: {
+    width: 72,
+    height: 72,
+    borderRadius: borderRadius.sm,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  thumbnailButtonActive: {
+    borderColor: colors.primary,
+  },
+  thumbnailImage: {
+    width: '100%',
+    height: '100%',
+  },
   galleryContainer: {
     width: '100%',
-    height: IMAGE_HEIGHT,
     backgroundColor: colors.surface,
     marginBottom: spacing.lg,
   },
   imageSlide: {
-    width,
-    height: IMAGE_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -172,31 +274,34 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  content: {
+  info: {
+    flex: 1,
     paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    justifyContent: 'center',
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: spacing.md,
     marginBottom: spacing.sm,
   },
   name: {
     flex: 1,
-    fontSize: fontSizes.xl,
+    fontSize: fontSizes.xxl,
     fontWeight: '700',
     color: colors.text,
   },
   price: {
-    fontSize: fontSizes.xl,
+    fontSize: fontSizes.xxl,
     fontWeight: '700',
     color: colors.price,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.md,
     marginBottom: spacing.md,
   },
   category: {
@@ -204,6 +309,17 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 1,
+    fontWeight: '600',
+  },
+  outOfStockBadge: {
+    backgroundColor: colors.danger + '1A',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+  },
+  outOfStockText: {
+    fontSize: fontSizes.xs,
+    color: colors.danger,
     fontWeight: '600',
   },
   divider: {
@@ -225,11 +341,10 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
+    marginTop: spacing.xl,
   },
   actionButton: {
     flex: 1,
+    maxWidth: 220,
   },
 });

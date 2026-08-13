@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AdminStackParamList } from '../types/navigation';
 import { AdminDashboardScreen } from '../screens/admin/AdminDashboardScreen';
@@ -9,7 +10,7 @@ const Stack = createNativeStackNavigator<AdminStackParamList>();
 
 export function AdminStackNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: Platform.OS !== 'web' }}>
       <Stack.Screen
         name="AdminDashboard"
         component={AdminDashboardScreen}

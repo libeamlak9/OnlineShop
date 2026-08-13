@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Category, Product } from '../types';
 import { getCategoryColor } from '../constants/categories';
@@ -28,11 +29,15 @@ export function getProductGalleryImages(product: Product): string[] {
 
 export async function resizeImage(uri: string, maxWidth = 800): Promise<string> {
   try {
+    const isWeb = Platform.OS === 'web';
     const manipulated = await ImageManipulator.manipulateAsync(
       uri,
       [{ resize: { width: maxWidth } }],
-      { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+      { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: isWeb }
     );
+    if (isWeb && manipulated.base64) {
+      return `data:image/jpeg;base64,${manipulated.base64}`;
+    }
     return manipulated.uri;
   } catch {
     return uri;

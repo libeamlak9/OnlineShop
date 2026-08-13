@@ -1,11 +1,13 @@
 import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components/Screen';
 import { CartItemRow } from '../../components/CartItemRow';
 import { EmptyState } from '../../components/EmptyState';
 import { Button } from '../../components/Button';
+import { WebHeader } from '../../components/WebHeader';
 import { useApp } from '../../context/AppContext';
 import { RootStackParamList } from '../../types/navigation';
 import { colors, spacing, fontSizes } from '../../constants/theme';
@@ -16,33 +18,56 @@ export function CartScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { cart, cartTotal, cartCount, updateCartQuantity, removeFromCart } = useApp();
 
+  const isWeb = Platform.OS === 'web';
+
   if (cart.length === 0) {
     return (
-      <Screen>
-        <EmptyState message="Your cart is empty." icon="cart-outline" />
-      </Screen>
+      <>
+        {isWeb && <WebHeader showSearch={false} />}
+        <Screen>
+          <EmptyState message="Your cart is empty." icon="cart-outline" />
+        </Screen>
+      </>
     );
   }
 
   return (
-    <Screen noPadding edges={['top', 'left', 'right']}>
-      <FlatList
-        data={cart}
-        keyExtractor={(item) => item.product.id}
-        contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <CartItemRow
-            item={item}
-            onIncrease={() =>
-              updateCartQuantity(item.product.id, item.quantity + 1)
-            }
-            onDecrease={() =>
-              updateCartQuantity(item.product.id, item.quantity - 1)
-            }
-            onRemove={() => removeFromCart(item.product.id)}
-          />
-        )}
-      />
+    <>
+      {isWeb && <WebHeader showSearch={false} />}
+      <Screen noPadding edges={['top', 'left', 'right']}>
+        <View style={styles.container}>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Shopping Cart</Text>
+          {isWeb && (
+            <TouchableOpacity
+              style={styles.homeLink}
+              onPress={() => navigation.navigate('UserTabs', { screen: 'Home' })}
+            >
+              <Ionicons name="arrow-back" size={16} color={colors.primary} />
+              <Text style={styles.homeLinkText}>Continue Shopping</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <FlatList
+          data={cart}
+          keyExtractor={(item) => item.product.id}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => (
+            <CartItemRow
+              item={item}
+              onIncrease={() =>
+                updateCartQuantity(item.product.id, item.quantity + 1)
+              }
+              onDecrease={() =>
+                updateCartQuantity(item.product.id, item.quantity - 1)
+              }
+              onRemove={() => removeFromCart(item.product.id)}
+            />
+          )}
+        />
+      </View>
+
       <View style={styles.footer}>
         <View style={styles.footerInner}>
           <View style={styles.row}>
@@ -61,18 +86,42 @@ export function CartScreen() {
         </View>
       </View>
     </Screen>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  list: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: Platform.OS === 'web' ? 24 : 200,
+  container: {
+    flex: 1,
     maxWidth: MAX_WIDTH,
     width: '100%',
     alignSelf: 'center',
-    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  title: {
+    fontSize: fontSizes.xxl,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  homeLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  homeLinkText: {
+    fontSize: fontSizes.md,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  list: {
+    paddingBottom: Platform.OS === 'web' ? 24 : 200,
   },
   footer: {
     ...Platform.select({

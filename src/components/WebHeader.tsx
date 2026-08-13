@@ -11,9 +11,14 @@ import { colors, spacing, borderRadius, fontSizes } from '../constants/theme';
 interface WebHeaderProps {
   searchValue?: string;
   onSearchChange?: (text: string) => void;
+  showSearch?: boolean;
 }
 
-export function WebHeader({ searchValue = '', onSearchChange }: WebHeaderProps) {
+export function WebHeader({
+  searchValue = '',
+  onSearchChange,
+  showSearch = true,
+}: WebHeaderProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { cartCount, setRole } = useApp();
   const { isDesktop } = useResponsive();
@@ -31,7 +36,7 @@ export function WebHeader({ searchValue = '', onSearchChange }: WebHeaderProps) 
           <Text style={styles.brandText}>Student Shop</Text>
         </TouchableOpacity>
 
-        {isDesktop && onSearchChange && (
+        {showSearch && isDesktop && onSearchChange && (
           <View style={styles.search}>
             <SearchBar value={searchValue} onChangeText={onSearchChange} />
           </View>
@@ -82,9 +87,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     ...(Platform.OS === 'web'
       ? ({
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
           boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         } as any)
       : {}),

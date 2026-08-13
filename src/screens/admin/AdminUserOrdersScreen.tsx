@@ -1,12 +1,16 @@
+import { Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Screen } from '../../components/Screen';
 import { EmptyState } from '../../components/EmptyState';
+import { AdminHeader } from '../../components/AdminHeader';
 import { useApp } from '../../context/AppContext';
 import { getProductCoverImage } from '../../utils/images';
 import { RootStackParamList } from '../../types/navigation';
 import { colors, spacing, borderRadius, fontSizes } from '../../constants/theme';
+
+const MAX_WIDTH = 1000;
 
 export function AdminUserOrdersScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -18,70 +22,88 @@ export function AdminUserOrdersScreen() {
     .filter((order) => order.phoneNumber === phoneNumber)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+  const isWeb = Platform.OS === 'web';
+
   if (userOrders.length === 0) {
     return (
-      <Screen>
-        <EmptyState message="No orders found for this user." icon="receipt-outline" />
-      </Screen>
+      <>
+        {isWeb && <AdminHeader />}
+        <Screen>
+          <EmptyState message="No orders found for this user." icon="receipt-outline" />
+        </Screen>
+      </>
     );
   }
 
   return (
-    <Screen>
-      <Text style={styles.phoneNumber}>{phoneNumber}</Text>
-      <Text style={styles.subtitle}>{userOrders.length} order(s)</Text>
+    <>
+      {isWeb && <AdminHeader />}
+      <Screen noPadding edges={['top', 'left', 'right']}>
+        <View style={styles.container}>
+        <Text style={styles.phoneNumber}>{phoneNumber}</Text>
+        <Text style={styles.subtitle}>{userOrders.length} order(s)</Text>
 
-      <FlatList
-        data={userOrders}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => {
-          const firstItem = item.items[0];
-          const imageUri = firstItem ? getProductCoverImage(firstItem.product) : '';
-          const itemNames = item.items.map((i) => i.product.name).join(', ');
+        <FlatList
+          data={userOrders}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => {
+            const firstItem = item.items[0];
+            const imageUri = firstItem ? getProductCoverImage(firstItem.product) : '';
+            const itemNames = item.items.map((i) => i.product.name).join(', ');
 
-          return (
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
-            >
-              <View style={styles.thumbnail}>
-                <Image source={{ uri: imageUri }} style={styles.thumbnailImage} resizeMode="contain" />
-              </View>
-              <View style={styles.details}>
-                <View style={styles.header}>
-                  <Text style={styles.total}>${item.total.toFixed(2)}</Text>
-                  <Text style={styles.date}>
-                    {new Date(item.createdAt).toLocaleDateString()}
+            return (
+              <TouchableOpacity
+                style={styles.card}
+                onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
+              >
+                <View style={styles.thumbnail}>
+                  <Image source={{ uri: imageUri }} style={styles.thumbnailImage} resizeMode="contain" />
+                </View>
+                <View style={styles.details}>
+                  <View style={styles.header}>
+                    <Text style={styles.total}>${item.total.toFixed(2)}</Text>
+                    <Text style={styles.date}>
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  <Text style={styles.itemNames} numberOfLines={2}>
+                    {itemNames}
+                  </Text>
+                  <Text style={styles.paymentMethod}>
+                    {item.paymentMethod === 'cash_on_delivery'
+                      ? 'Cash on delivery'
+                      : 'Online payment'}
                   </Text>
                 </View>
-                <Text style={styles.itemNames} numberOfLines={2}>
-                  {itemNames}
-                </Text>
-                <Text style={styles.paymentMethod}>
-                  {item.paymentMethod === 'cash_on_delivery'
-                    ? 'Cash on delivery'
-                    : 'Online payment'}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.badge,
-                  item.status === 'paid' && styles.paidBadge,
-                  item.status === 'pending' && styles.pendingBadge,
-                  item.status === 'delivered' && styles.deliveredBadge,
-                ]}
-              >
-                <Text style={styles.badgeText}>{item.status}</Text>
-              </View>
-            </TouchableOpacity>
-          );
-        }}
-      />
+                <View
+                  style={[
+                    styles.badge,
+                    item.status === 'paid' && styles.paidBadge,
+                    item.status === 'pending' && styles.pendingBadge,
+                    item.status === 'delivered' && styles.deliveredBadge,
+                  ]}
+                >
+                  <Text style={styles.badgeText}>{item.status}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
     </Screen>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    maxWidth: MAX_WIDTH,
+    width: '100%',
+    alignSelf: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
   phoneNumber: {
     fontSize: fontSizes.xxl,
     fontWeight: '700',
@@ -101,6 +123,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
+    ...(Platform.OS === 'web'
+      ? ({
+          cursor: 'pointer',
+        } as any)
+      : {}),
   },
   thumbnail: {
     width: 64,

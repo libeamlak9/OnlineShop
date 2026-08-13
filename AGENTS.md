@@ -6,14 +6,15 @@ This file is written for AI coding agents working on the **OnlineShop** project.
 
 ## Project overview
 
-OnlineShop is a cross-platform mobile app built with **Expo SDK 54** and **React Native**. It is a student shopping MVP that lets users browse school supplies, add items to a cart, and check out. It also provides an admin mode where products can be created, edited, and deleted.
+OnlineShop (also referred to as "Student Shop" in the UI) is a cross-platform mobile app built with **Expo SDK 54** and **React Native**. It is a student shopping MVP that lets users browse school supplies, add items to a cart, check out, and view order history. It also provides an admin mode where products and categories can be created, edited, and deleted, and where orders can be reviewed by customer phone number.
 
 Key facts:
 
-- Single-user, local-only data. Products and orders are persisted on the device with `@react-native-async-storage/async-storage`.
+- Single-user, local-only data. Products, orders, and categories are persisted on the device with `@react-native-async-storage/async-storage`.
 - No real backend or payment gateway. Online payment is simulated.
 - Supports **iOS**, **Android**, and **web** targets through Expo.
 - Entry point: `index.ts` registers `App.tsx` as the root component.
+- Web target has dedicated responsive headers (`WebHeader`, `AdminHeader`) and a footer on the home screen; native targets use the standard bottom tab navigator and screen headers.
 
 ---
 
@@ -31,7 +32,7 @@ Key facts:
 | Persistence | AsyncStorage | `@react-native-async-storage/async-storage@2.2.0` |
 | Styling | React Native `StyleSheet` | Design tokens in `src/constants/theme.ts` |
 | Icons | `@expo/vector-icons` | Ionicons glyph set |
-| Image handling | `expo-image-picker`, `expo-image-manipulator` | Admin product images |
+| Image handling | `expo-image-picker`, `expo-image-manipulator` | Admin product images; multi-image gallery support |
 | Picker | `@react-native-picker/picker` | Category selector |
 
 Always consult the exact versioned docs before writing code: <https://docs.expo.dev/versions/v54.0.0/>.
@@ -51,15 +52,17 @@ Always consult the exact versioned docs before writing code: <https://docs.expo.
 ├── assets/                         # App icons, splash, favicon
 └── src/
     ├── components/                 # Reusable UI components
+    │   ├── AdminHeader.tsx         # Web-only admin navigation header
     │   ├── Button.tsx              # Primary / secondary / danger / outline buttons
     │   ├── CartItemRow.tsx         # Cart line item with quantity controls
     │   ├── CategoryFilter.tsx      # Horizontal category chips + "More" dropdown
     │   ├── EmptyState.tsx          # Empty list placeholder with icon
     │   ├── ProductCard.tsx         # Product grid card
     │   ├── Screen.tsx              # Safe-area wrapper with optional scroll/padding
-    │   └── SearchBar.tsx           # Text input with search/clear icons
+    │   ├── SearchBar.tsx           # Text input with search/clear icons
+    │   └── WebHeader.tsx           # Web-only student shop header
     ├── constants/
-    │   ├── categories.ts           # Category list and category colors
+    │   ├── categories.ts           # Default category list, colors, and color helper
     │   └── theme.ts                # Colors, spacing, font sizes, border radius, breakpoints
     ├── context/
     │   └── AppContext.tsx          # Global state, reducer, actions, and persistence hooks
@@ -74,22 +77,24 @@ Always consult the exact versioned docs before writing code: <https://docs.expo.
     ├── screens/
     │   ├── RoleSelectScreen.tsx    # Landing role chooser
     │   ├── admin/
-    │   │   ├── AdminDashboardScreen.tsx
-    │   │   ├── AdminOrdersScreen.tsx
-    │   │   └── AddEditItemScreen.tsx
+    │   │   ├── AdminDashboardScreen.tsx  # Product/category management and stats
+    │   │   ├── AdminOrdersScreen.tsx     # Orders grouped by customer phone number
+    │   │   ├── AdminUserOrdersScreen.tsx # All orders for a single phone number
+    │   │   └── AddEditItemScreen.tsx     # Create/edit product with multi-image upload
     │   └── user/
-    │       ├── HomeScreen.tsx
-    │       ├── ProductDetailScreen.tsx
-    │       ├── CartScreen.tsx
-    │       ├── CheckoutScreen.tsx
-    │       ├── OrdersScreen.tsx
-    │       └── OrderDetailScreen.tsx
+    │       ├── HomeScreen.tsx            # Product grid with search, category filter, new arrivals
+    │       ├── ProductDetailScreen.tsx   # Product gallery, details, add to cart / buy now
+    │       ├── CartScreen.tsx            # Cart review and checkout navigation
+    │       ├── CheckoutScreen.tsx        # Delivery info, Ethiopian phone validation, payment
+    │       ├── OrdersScreen.tsx          # User order history
+    │       └── OrderDetailScreen.tsx     # Single order details
     ├── types/
     │   ├── index.ts                # Domain types (Product, Order, CartItem, etc.)
     │   └── navigation.ts           # React Navigation param lists
     └── utils/
-        ├── images.ts               # Placeholder image generation + resize helper
-        └── storage.ts              # AsyncStorage read/write for products and orders
+        ├── images.ts               # Placeholder image generation + cover/gallery helpers
+        ├── storage.ts              # AsyncStorage read/write for products, orders, categories
+        └── validation.ts           # Ethiopian phone number validation
 ```
 
 ---
@@ -117,7 +122,7 @@ npm run ios       # iOS simulator (macOS only)
 npm run web       # Web browser
 ```
 
-Windows quick start: double-click `start-app.bat`, which simply runs `npm start` from the project folder.
+Windows quick start: double-click `start-app.bat`, which opens a terminal, runs `npm start`, and keeps the window open.
 
 ---
 
@@ -127,9 +132,12 @@ Windows quick start: double-click `start-app.bat`, which simply runs `npm start`
 
 All shared state lives in `src/context/AppContext.tsx`:
 
-- A single `useReducer` manages `role`, `products`, `cart`, and `orders`.
-- On first mount, products and orders are hydrated from `AsyncStorage`. If no products exist, `seedProducts` are loaded and saved.
-- Every change to `products` or `orders` is persisted via `useEffect`.
+- A single `useReducer` manages `role`, `products`, `cart`, `orders`, and `categories`.
+- On first mount, products, orders, and categories are hydrated from `AsyncStorage`.
+  - If no products exist, `seedProducts` are loaded and saved.
+  - If no categories exist, `DEFAULT_CATEGORIES` are loaded and saved.
+  - Legacy products that stored a single `image` string are migrated to the current `images` / `coverImageIndex` shape before being saved back.
+- Every change to `products`, `orders`, or `categories` is persisted via `useEffect`.
 - Derived values (`cartTotal`, `cartCount`) are computed at render time.
 
 Actions:
@@ -137,6 +145,7 @@ Actions:
 - `SET_ROLE`, `SET_PRODUCTS`, `ADD_PRODUCT`, `UPDATE_PRODUCT`, `DELETE_PRODUCT`
 - `ADD_TO_CART`, `REMOVE_FROM_CART`, `UPDATE_CART_QUANTITY`, `CLEAR_CART`
 - `SET_ORDERS`, `ADD_ORDER`
+- `SET_CATEGORIES`, `ADD_CATEGORY`, `REMOVE_CATEGORY`
 
 ### Navigation
 
@@ -150,23 +159,32 @@ Param lists are defined in `src/types/navigation.ts`.
 
 ### Data model
 
-- `Product`: `id`, `name`, `description`, `price`, `category`, `image`, `stock`, `createdAt`
+- `Product`: `id`, `name`, `description`, `price`, `category`, `images` (string array), `coverImageIndex`, `stock`, `createdAt`
 - `CartItem`: `{ product, quantity }`
-- `Order`: `id`, `items`, `total`, `paymentMethod`, `status`, `createdAt`
-- `Category`: one of `School Uniform`, `Stationery`, `Books`, `Sports`, `Electronics`, `Accessories`
+- `Order`: `id`, `items`, `total`, `paymentMethod`, `status`, `location`, `phoneNumber`, `createdAt`
+- `Category`: arbitrary string; defaults are `School Uniform`, `Stationery`, `Books`, `Sports`, `Electronics`, `Accessories`
 - `PaymentMethod`: `cash_on_delivery` | `online_payment`
 - `OrderStatus`: `pending` | `paid` | `delivered`
 
 ### Images
 
 - Placeholder images are generated with `placehold.co`, colored by category.
-- Admin image uploads are resized to a max width of 800px and saved as JPEG.
-- `utils/images.ts:getProductImage` falls back to a placeholder when no image URL is provided.
+- Products support multiple images. `coverImageIndex` selects which image is shown in cards and lists.
+- Admin image uploads allow multiple selections, are resized to a max width of 800px, and are saved as JPEG (base64 on web, file URI on native).
+- `utils/images.ts` provides `getProductCoverImage` and `getProductGalleryImages` for cover and gallery rendering.
+
+### Checkout behavior
+
+- The checkout screen collects a delivery `location` and an Ethiopian phone number.
+- Phone numbers are validated with `isValidEthiopianPhoneNumber` in `src/utils/validation.ts`.
+- Cash on delivery creates orders with `pending` status; online payment creates orders with `paid` status.
+- Each cart line item becomes a separate `Order` entry, sharing the same location and phone number.
 
 ### Persistence keys
 
 - `@onlineshop_products`
 - `@onlineshop_orders`
+- `@onlineshop_categories`
 
 ---
 
@@ -181,6 +199,7 @@ Param lists are defined in `src/types/navigation.ts`.
 - Use `colors.surface` for white/card backgrounds and `colors.background` for page backgrounds.
 - Use `SafeAreaView` from `react-native-safe-area-context` via the `Screen` component.
 - Keep screens pure of layout concerns where possible; reuse `Screen`, `Button`, and `EmptyState`.
+- Web-specific UI (headers, footers, hover cursors) is gated with `Platform.OS === 'web'` checks.
 
 ---
 
@@ -204,7 +223,7 @@ There is no ESLint or Prettier configuration present. If you add one, keep rules
 - **No real payment processing.** Card details entered on the checkout screen are validated only by length and are never transmitted or stored securely.
 - **Local storage only.** AsyncStorage data is stored unencrypted on the device. Do not store real payment data, passwords, or PII in this app.
 - **Placeholder images** are loaded from an external service (`placehold.co`) over HTTPS. If network access is restricted, those images will not render.
-- Admin product images are picked from the device media library and stored as local file URIs. These URIs may not be portable across app reinstalls or devices.
+- Admin product images are picked from the device media library and stored as local file URIs or base64 strings. These may not be portable across app reinstalls or devices.
 
 ---
 
