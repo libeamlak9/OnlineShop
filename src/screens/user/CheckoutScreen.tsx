@@ -3,7 +3,6 @@ import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,9 +16,13 @@ import { Button } from '../../components/Button';
 import { WebHeader } from '../../components/WebHeader';
 import { useApp } from '../../context/AppContext';
 import { useResponsive } from '../../hooks/useResponsive';
+import { useTelegram } from '../../hooks/useTelegram';
+import { useTelegramMainButton } from '../../hooks/useTelegramMainButton';
+import { useTelegramBackButton } from '../../hooks/useTelegramBackButton';
+import { hapticNotification, showAlert } from '../../lib/telegram';
 import { RootStackParamList } from '../../types/navigation';
 import { Order, PaymentMethod } from '../../types';
-import { colors, spacing, borderRadius, fontSizes } from '../../constants/theme';
+import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../../constants/theme';
 import { isValidEthiopianPhoneNumber } from '../../utils/validation';
 
 const MAX_WIDTH = 900;
@@ -28,6 +31,10 @@ export function CheckoutScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { cart, cartTotal, clearCart, addOrder } = useApp();
   const { isDesktop } = useResponsive();
+  const { isInTelegram } = useTelegram();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash_on_delivery');
   const [location, setLocation] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -47,35 +54,67 @@ export function CheckoutScreen() {
     (paymentMethod === 'cash_on_delivery' ||
       (cardNumber.length >= 12 && expiry.length >= 4 && cvv.length >= 3));
 
-  function handlePlaceOrder() {
+  async function handlePlaceOrder() {
     if (cart.length === 0) return;
     if (!phoneValid) {
       setPhoneTouched(true);
-      Alert.alert('Invalid Phone Number', 'Please enter a valid Ethiopian phone number.');
+      await showAlert('Invalid Phone Number', 'Please enter a valid Ethiopian phone number.');
       return;
     }
 
     const baseTime = Date.now();
-    cart.forEach((cartItem, index) => {
-      const order: Order = {
-        id: (baseTime + index).toString(),
-        items: [cartItem],
-        total: cartItem.product.price * cartItem.quantity,
-        paymentMethod,
-        status: paymentMethod === 'online_payment' ? 'paid' : 'pending',
-        location: location.trim(),
-        phoneNumber: phoneNumber.trim(),
-        createdAt: new Date().toISOString(),
-      };
-      addOrder(order);
-    });
+    const orders: Order[] = cart.map((cartItem, index) => ({
+      id: (baseTime + index).toString(),
+      items: [cartItem],
+      total: cartItem.product.price * cartItem.quantity,
+      paymentMethod,
+      status: paymentMethod === 'online_payment' ? 'paid' : 'pending',
+      location: location.trim(),
+      phoneNumber: phoneNumber.trim(),
+      createdAt: new Date().toISOString(),
+    }));
 
-    clearCart();
+    try {
+      await Promise.all(orders.map((order) => addOrder(order)));
+      clearCart();
+      navigation.navigate('UserTabs', { screen: 'Orders' });
+      hapticNotification('success');
+      await showAlert(
+        'Order Placed',
+        `Thank you! Your ${orders.length} order${orders.length > 1 ? 's' : ''} have been placed.`
+      );
+    } catch {
+      hapticNotification('error');
+      await showAlert('Error', 'Failed to place order. Please check your connection and try again.');
+    }
+  }
 
-    navigation.navigate('UserTabs', { screen: 'Orders' });
-    Alert.alert(
-      'Order Placed',
-      `Thank you! Your ${cart.length} order${cart.length > 1 ? 's' : ''} have been placed.`
+  useTelegramMainButton({
+    text: 'Place Order',
+    onClick: handlePlaceOrder,
+    enabled: canPlaceOrder,
+    visible: true,
+  });
+
+  useTelegramBackButton(true, () => navigation.goBack());
+
+  function TouchableOption({
+    label,
+    selected,
+    onPress,
+  }: {
+    label: string;
+    selected: boolean;
+    onPress: () => void;
+  }) {
+    return (
+      <TouchableOpacity
+        style={[styles.option, selected && styles.optionSelected]}
+        onPress={onPress}
+      >
+        <View style={[styles.radio, selected && styles.radioSelected]} />
+        <Text style={styles.optionText}>{label}</Text>
+      </TouchableOpacity>
     );
   }
 
@@ -103,7 +142,7 @@ export function CheckoutScreen() {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Order Summary</Text>
                 {cart.map((item) => (
-                  <View key={item.product.id} style={styles.summaryRow}>
+                  <View key={`${item.product.id}-${item.selectedImageIndex}`} style={styles.summaryRow}>
                     <Text style={styles.summaryText}>
                       {item.quantity} × {item.product.name}
                     </Text>
@@ -193,12 +232,14 @@ export function CheckoutScreen() {
                 </View>
               )}
 
-              <Button
-                title="Place Order"
-                onPress={handlePlaceOrder}
-                disabled={!canPlaceOrder}
-                style={styles.placeButton}
-              />
+              {!isInTelegram && (
+                <Button
+                  title="Place Order"
+                  onPress={handlePlaceOrder}
+                  disabled={!canPlaceOrder}
+                  style={styles.placeButton}
+                />
+              )}
             </View>
           </View>
         </View>
@@ -208,27 +249,7 @@ export function CheckoutScreen() {
   );
 }
 
-function TouchableOption({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      style={[styles.option, selected && styles.optionSelected]}
-      onPress={onPress}
-    >
-      <View style={[styles.radio, selected && styles.radioSelected]} />
-      <Text style={styles.optionText}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette) => StyleSheet.create({
   scroll: {
     flex: 1,
   },

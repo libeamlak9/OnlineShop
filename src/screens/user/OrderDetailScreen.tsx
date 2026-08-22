@@ -7,8 +7,9 @@ import { Screen } from '../../components/Screen';
 import { EmptyState } from '../../components/EmptyState';
 import { WebHeader } from '../../components/WebHeader';
 import { useApp } from '../../context/AppContext';
+import { useTelegramBackButton } from '../../hooks/useTelegramBackButton';
 import { RootStackParamList } from '../../types/navigation';
-import { colors, spacing, borderRadius, fontSizes } from '../../constants/theme';
+import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../../constants/theme';
 
 const MAX_WIDTH = 900;
 
@@ -17,9 +18,13 @@ export function OrderDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { orderId } = route.params as { orderId: string };
   const { orders } = useApp();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
 
   const order = orders.find((o) => o.id === orderId);
   const isWeb = Platform.OS === 'web';
+
+  useTelegramBackButton(true, () => navigation.goBack());
 
   if (!order) {
     return (
@@ -72,7 +77,7 @@ export function OrderDetailScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Items</Text>
             {order.items.map((item) => (
-              <View key={item.product.id} style={styles.itemRow}>
+              <View key={`${item.product.id}-${item.selectedImageIndex}`} style={styles.itemRow}>
                 <Text style={styles.itemName}>
                   {item.quantity} × {item.product.name}
                 </Text>
@@ -112,7 +117,7 @@ export function OrderDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette) => StyleSheet.create({
   scroll: {
     flex: 1,
   },

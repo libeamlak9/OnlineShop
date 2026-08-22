@@ -6,9 +6,10 @@ import { Screen } from '../../components/Screen';
 import { EmptyState } from '../../components/EmptyState';
 import { AdminHeader } from '../../components/AdminHeader';
 import { useApp } from '../../context/AppContext';
+import { useTelegramBackButton } from '../../hooks/useTelegramBackButton';
 import { getProductCoverImage } from '../../utils/images';
 import { RootStackParamList } from '../../types/navigation';
-import { colors, spacing, borderRadius, fontSizes } from '../../constants/theme';
+import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../../constants/theme';
 
 const MAX_WIDTH = 1000;
 
@@ -17,12 +18,16 @@ export function AdminUserOrdersScreen() {
   const route = useRoute();
   const { phoneNumber } = route.params as { phoneNumber: string };
   const { orders } = useApp();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
 
   const userOrders = orders
     .filter((order) => order.phoneNumber === phoneNumber)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const isWeb = Platform.OS === 'web';
+
+  useTelegramBackButton(true, () => navigation.goBack());
 
   if (userOrders.length === 0) {
     return (
@@ -95,7 +100,7 @@ export function AdminUserOrdersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     flex: 1,
     maxWidth: MAX_WIDTH,

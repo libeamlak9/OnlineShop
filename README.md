@@ -1,6 +1,6 @@
-# OnlineShop
+# Gold Fashion — Telegram Mini App
 
-Cross-platform mobile and web app built with **Expo SDK 54** and **React Native** for student online shopping.
+A **Telegram Mini App** built with **Expo SDK 54** and **React Native** (rendered via `react-native-web`) for student online shopping. The same mobile-style UI runs inside Telegram on Android, iOS, desktop, and Web Telegram.
 
 ## Features
 
@@ -8,7 +8,6 @@ Cross-platform mobile and web app built with **Expo SDK 54** and **React Native*
 - Browse products in a responsive grid.
 - Search products by name or description.
 - Filter products by category.
-- **New Arrivals** filter for recently uploaded items.
 - Add items to cart, adjust quantities, and remove items.
 - Checkout with delivery location and Ethiopian phone-number validation.
 - Choose between **Cash on Delivery** and **Simulated Online Payment**.
@@ -23,7 +22,7 @@ Cross-platform mobile and web app built with **Expo SDK 54** and **React Native*
 
 ## Tech stack
 
-- **Framework**: Expo SDK `~54.0.36`
+- **Framework**: Expo SDK `~54.0.36` (web target)
 - **UI**: React Native `0.81.5`, react-native-web `^0.21.0`
 - **React**: `19.1.0`
 - **Language**: TypeScript `~5.9.2` (strict mode)
@@ -31,12 +30,14 @@ Cross-platform mobile and web app built with **Expo SDK 54** and **React Native*
 - **State**: React Context + `useReducer`
 - **Persistence**: AsyncStorage (`@react-native-async-storage/async-storage`)
 - **Icons**: `@expo/vector-icons` (Ionicons)
+- **Telegram**: `@tma.js/sdk`, `@tma.js/sdk-react`
 
 ## Requirements
 
 - Node.js `22+`
 - npm `10+`
-- Expo Go app on your physical device, or an Android/iOS emulator
+- A Telegram bot (for registering the Mini App with BotFather)
+- A public HTTPS URL to host the static web export
 
 ## Get started
 
@@ -44,21 +45,27 @@ Cross-platform mobile and web app built with **Expo SDK 54** and **React Native*
 # Install dependencies
 npm install
 
-# Start the development server
-npm start
+# Start the development server for the web target
+npm run web
 ```
 
-### Windows quick start
+Open the local URL in a browser. To test inside Telegram, deploy the build first (see below).
 
-Double-click **`start-app.bat`** in the project folder. It will open a terminal, start the Expo dev server, and display the QR code you can scan with the Expo Go app.
-
-## Run on a specific platform
+## Build for Telegram Mini App
 
 ```bash
-npm run android   # Android emulator or connected device
-npm run ios       # iOS simulator (macOS only)
-npm run web       # Web browser
+# Create a static web export in dist/
+npx expo export --platform web
 ```
+
+Deploy the contents of `dist/` to any static HTTPS host (Vercel, Netlify, GitHub Pages, AWS S3, your own server, etc.).
+
+## Register with BotFather
+
+1. Create or open your Telegram bot with [@BotFather](https://t.me/BotFather).
+2. Send `/myapps` or `/newapp` and follow the prompts.
+3. Provide the deployed HTTPS URL when asked for the Mini App URL.
+4. Save the changes and open the Mini App from the bot's menu or attachment button.
 
 ## Type checking
 
@@ -70,13 +77,15 @@ npx tsc --noEmit
 
 ```
 .
-├── App.tsx                         # Root component: AppProvider + AppNavigator
+├── App.tsx                         # Root component: AppProvider + AppNavigator + Telegram init
 ├── index.ts                        # Registers the root component with Expo
-├── app.json                        # Expo app manifest
+├── app.json                        # Expo app manifest (web-only target)
 ├── package.json                    # Dependencies and npm scripts
 ├── tsconfig.json                   # TypeScript configuration
-├── start-app.bat                   # Windows quick-start helper
 ├── assets/                         # App icons, splash, favicon
+├── supabase/
+│   └── migrations/
+│       └── 001_initial_schema.sql  # Supabase tables, RLS, storage bucket
 └── src/
     ├── components/                 # Reusable UI components
     │   ├── AdminHeader.tsx         # Web-only admin navigation header
@@ -87,8 +96,9 @@ npx tsc --noEmit
     │   ├── ProductCard.tsx         # Product grid card
     │   ├── Screen.tsx              # Safe-area wrapper with optional scroll/padding
     │   ├── SearchBar.tsx           # Text input with search/clear icons
-    │   └── WebHeader.tsx           # Web-only student shop header
+    │   └── WebHeader.tsx           # Web-only Gold Fashion header
     ├── constants/
+    │   ├── admin.ts                # Admin keyword and credential helpers
     │   ├── categories.ts           # Default category list and colors
     │   └── theme.ts                # Colors, spacing, font sizes, border radius
     ├── context/
@@ -96,13 +106,18 @@ npx tsc --noEmit
     ├── data/
     │   └── seedProducts.ts         # Default product catalog
     ├── hooks/
-    │   └── useResponsive.ts        # useWindowDimensions-based breakpoint helper
+    │   ├── useResponsive.ts        # useWindowDimensions-based breakpoint helper
+    │   ├── useTelegram.ts          # Telegram state hook
+    │   ├── useTelegramBackButton.ts # Telegram native back button hook
+    │   └── useTelegramMainButton.ts # Telegram native main button hook
+    ├── lib/
+    │   ├── supabase.ts             # Supabase client initialization
+    │   └── telegram.ts             # Telegram Mini Apps SDK helpers
     ├── navigation/
-    │   ├── AppNavigator.tsx        # Root native-stack navigator
+    │   ├── AppNavigator.tsx        # Root navigator; hides headers inside Telegram
     │   ├── AdminStackNavigator.tsx # Admin screens stack
     │   └── UserTabNavigator.tsx    # Student bottom-tabs
     ├── screens/
-    │   ├── RoleSelectScreen.tsx    # Landing role chooser
     │   ├── admin/
     │   │   ├── AdminDashboardScreen.tsx
     │   │   ├── AdminOrdersScreen.tsx
@@ -115,6 +130,12 @@ npx tsc --noEmit
     │       ├── CheckoutScreen.tsx
     │       ├── OrdersScreen.tsx
     │       └── OrderDetailScreen.tsx
+    ├── services/
+    │   ├── cache.ts                # AsyncStorage cache helpers
+    │   ├── categories.ts           # Category CRUD + realtime
+    │   ├── images.ts               # Supabase Storage upload/delete
+    │   ├── orders.ts               # Order CRUD + realtime
+    │   └── products.ts             # Product CRUD + realtime
     ├── types/
     │   ├── index.ts                # Domain types
     │   └── navigation.ts           # React Navigation param lists
@@ -127,13 +148,15 @@ npx tsc --noEmit
 ## Architecture notes
 
 - All shared state lives in `src/context/AppContext.tsx` and is persisted to AsyncStorage.
-- On first launch, seed products and default categories are loaded if none exist.
 - Products support multiple images; `coverImageIndex` controls which image is shown in lists.
 - Each cart line item becomes a separate `Order` entry sharing location and phone number.
-- The web layout uses dedicated responsive headers (`WebHeader`, `AdminHeader`); native targets use the standard bottom tab navigator.
+- The Telegram Mini Apps SDK is initialized in `src/lib/telegram.ts` and bound to CSS variables for theme and safe-area insets.
+- Inside Telegram, the app hides React Navigation headers and web-only headers; it uses Telegram's native **MainButton**, **BackButton**, and **Popup** instead.
+- Outside Telegram, the app still runs as a normal web app for development and testing.
 
 ## Notes
 
-- **No real authentication.** Role selection is purely client-side state and can be switched at any time.
+- **No real authentication for shoppers.** Orders are anonymous in this MVP.
+- **Admin access** requires signing in through Supabase Auth with the credentials configured in `.env`.
 - **No real payment processing.** Online payment is simulated; card details are never transmitted or stored securely.
-- **Local storage only.** AsyncStorage data is stored unencrypted on the device. Do not store real payment data, passwords, or sensitive PII in this app.
+- **Local storage only.** AsyncStorage data is stored unencrypted in the browser. Do not store real payment data, passwords, or sensitive PII in this app.
