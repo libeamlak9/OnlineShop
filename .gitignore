@@ -42,3 +42,6 @@ tunnel.log
 # generated native folders
 /ios
 /android
+
+# deployment artifacts
+dist-deploy.zip

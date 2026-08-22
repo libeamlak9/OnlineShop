@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,6 +21,10 @@ import { useTelegram } from '../../hooks/useTelegram';
 import { useTelegramMainButton } from '../../hooks/useTelegramMainButton';
 import { useTelegramBackButton } from '../../hooks/useTelegramBackButton';
 import { hapticNotification, showAlert } from '../../lib/telegram';
+import {
+  buildNotificationPayload,
+  sendOrderNotification,
+} from '../../services/notifications';
 import { RootStackParamList } from '../../types/navigation';
 import { Order, PaymentMethod } from '../../types';
 import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../../constants/theme';
@@ -76,13 +81,38 @@ export function CheckoutScreen() {
 
     try {
       await Promise.all(orders.map((order) => addOrder(order)));
+
+      try {
+        const notificationPayload = buildNotificationPayload(
+          cart,
+          cartTotal,
+          colors,
+          phoneNumber.trim(),
+          location.trim()
+        );
+        await sendOrderNotification(notificationPayload);
+      } catch (notificationError) {
+        console.error('Failed to send order notification:', notificationError);
+        // Do not block the order if notification fails.
+      }
+
       clearCart();
       navigation.navigate('UserTabs', { screen: 'Orders' });
       hapticNotification('success');
       await showAlert(
-        'Order Placed',
-        `Thank you! Your ${orders.length} order${orders.length > 1 ? 's' : ''} have been placed.`
+        'Order Submitted',
+        `Thank you! Your ${orders.length} order${orders.length > 1 ? 's' : ''} have been submitted.`
       );
+
+      // Open the admin's Telegram DM so the shopper can add extra messages.
+      const adminUsername = process.env.EXPO_PUBLIC_ADMIN_TELEGRAM_USERNAME?.replace(/^@/, '');
+      if (adminUsername && Linking.canOpenURL) {
+        const url = `https://t.me/${adminUsername}`;
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+        }
+      }
     } catch {
       hapticNotification('error');
       await showAlert('Error', 'Failed to place order. Please check your connection and try again.');
@@ -90,7 +120,7 @@ export function CheckoutScreen() {
   }
 
   useTelegramMainButton({
-    text: 'Place Order',
+    text: 'Submit Order',
     onClick: handlePlaceOrder,
     enabled: canPlaceOrder,
     visible: true,
@@ -234,7 +264,7 @@ export function CheckoutScreen() {
 
               {!isInTelegram && (
                 <Button
-                  title="Place Order"
+                  title="Submit Order"
                   onPress={handlePlaceOrder}
                   disabled={!canPlaceOrder}
                   style={styles.placeButton}

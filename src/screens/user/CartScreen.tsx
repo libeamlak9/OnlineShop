@@ -7,8 +7,8 @@ import { Screen } from '../../components/Screen';
 import { CartItemRow } from '../../components/CartItemRow';
 import { EmptyState } from '../../components/EmptyState';
 import { WebHeader } from '../../components/WebHeader';
+import { Button } from '../../components/Button';
 import { useApp } from '../../context/AppContext';
-import { OrderShareButton } from '../../components/OrderShareButton';
 import { RootStackParamList } from '../../types/navigation';
 import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../../constants/theme';
 
@@ -16,15 +16,14 @@ const MAX_WIDTH = 900;
 
 export function CartScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { cart, cartTotal, cartCount, updateCartQuantity, removeFromCart, clearCart } = useApp();
+  const { cart, cartTotal, cartCount, updateCartQuantity, removeFromCart } = useApp();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
 
   const isWeb = Platform.OS === 'web';
 
-  function handleShared() {
-    clearCart();
-    navigation.navigate('UserTabs', { screen: 'Home' });
+  function handleSubmitOrder() {
+    navigation.navigate('Checkout');
   }
 
   if (cart.length === 0) {
@@ -95,10 +94,10 @@ export function CartScreen() {
             <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.totalValue}>${cartTotal.toFixed(2)}</Text>
           </View>
-          <OrderShareButton
-            cart={cart}
-            cartTotal={cartTotal}
-            onShared={handleShared}
+          <Button
+            title="Submit Order"
+            onPress={handleSubmitOrder}
+            disabled={cart.length === 0}
           />
         </View>
       </View>
