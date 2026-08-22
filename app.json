@@ -13,6 +13,9 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
+    "experiments": {
+      "baseUrl": "/OnlineShop"
+    },
     "plugins": [
       "expo-asset",
       "expo-font"
