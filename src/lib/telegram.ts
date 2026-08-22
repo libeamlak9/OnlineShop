@@ -30,7 +30,15 @@ export function initTelegram(): () => void {
   }
 
   initialized = true;
-  const cleanup = init();
+  let cleanup: () => void;
+
+  try {
+    cleanup = init();
+  } catch (error) {
+    console.error('Failed to initialize Telegram SDK:', error);
+    initialized = false;
+    return () => {};
+  }
 
   try {
     miniApp.mount();
