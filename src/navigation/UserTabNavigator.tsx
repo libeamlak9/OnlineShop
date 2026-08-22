@@ -7,12 +7,15 @@ import { CartScreen } from '../screens/user/CartScreen';
 import { OrdersScreen } from '../screens/user/OrdersScreen';
 import { useApp } from '../context/AppContext';
 import { useThemeColors } from '../constants/theme';
+import { isTelegram } from '../lib/telegram';
 
 const Tab = createBottomTabNavigator<UserTabParamList>();
 
 export function UserTabNavigator() {
   const { cartCount } = useApp();
   const colors = useThemeColors();
+  const inTelegram = isTelegram();
+  const hideTabBar = Platform.OS === 'web' && !inTelegram;
 
   return (
     <Tab.Navigator
@@ -20,7 +23,7 @@ export function UserTabNavigator() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: Platform.OS === 'web' ? { display: 'none' } : {
+        tabBarStyle: hideTabBar ? { display: 'none' } : {
           height: 50,
           paddingBottom: 4,
           paddingTop: 0,
