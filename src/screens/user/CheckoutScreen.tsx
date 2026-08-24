@@ -3,7 +3,6 @@ import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -36,7 +35,7 @@ export function CheckoutScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { cart, cartTotal, clearCart, addOrder } = useApp();
   const { isDesktop } = useResponsive();
-  const { isInTelegram } = useTelegram();
+  const { isInTelegram, telegramUser } = useTelegram();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
 
@@ -88,7 +87,8 @@ export function CheckoutScreen() {
           cartTotal,
           colors,
           phoneNumber.trim(),
-          location.trim()
+          location.trim(),
+          telegramUser?.id?.toString()
         );
         await sendOrderNotification(notificationPayload);
       } catch (notificationError) {
@@ -103,16 +103,6 @@ export function CheckoutScreen() {
         'Order Submitted',
         `Thank you! Your ${orders.length} order${orders.length > 1 ? 's' : ''} have been submitted.`
       );
-
-      // Open the admin's Telegram DM so the shopper can add extra messages.
-      const adminUsername = process.env.EXPO_PUBLIC_ADMIN_TELEGRAM_USERNAME?.replace(/^@/, '');
-      if (adminUsername && Linking.canOpenURL) {
-        const url = `https://t.me/${adminUsername}`;
-        const canOpen = await Linking.canOpenURL(url);
-        if (canOpen) {
-          await Linking.openURL(url);
-        }
-      }
     } catch {
       hapticNotification('error');
       await showAlert('Error', 'Failed to place order. Please check your connection and try again.');

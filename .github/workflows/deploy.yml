@@ -22,7 +22,6 @@ jobs:
       EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
       EXPO_PUBLIC_ADMIN_EMAIL: ${{ vars.EXPO_PUBLIC_ADMIN_EMAIL }}
       EXPO_PUBLIC_ADMIN_PASSWORD: ${{ secrets.EXPO_PUBLIC_ADMIN_PASSWORD }}
-      EXPO_PUBLIC_ADMIN_TELEGRAM_USERNAME: ${{ vars.EXPO_PUBLIC_ADMIN_TELEGRAM_USERNAME }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

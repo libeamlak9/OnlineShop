@@ -219,8 +219,7 @@ Param lists are defined in `src/types/navigation.ts`.
 - Phone numbers are validated with `isValidEthiopianPhoneNumber` in `src/utils/validation.ts`.
 - Cash on delivery creates orders with `pending` status; online payment creates orders with `paid` status.
 - Each cart line item becomes a separate `Order` entry, sharing the same location and phone number.
-- After the order is saved, a Supabase Edge Function (`send-order-notification`) sends the order summary and product images as a Telegram DM to the configured admin `chat_id`.
-- The shopper is then redirected to the admin's Telegram DM (`https://t.me/<EXPO_PUBLIC_ADMIN_TELEGRAM_USERNAME>`) so they can add extra messages.
+- After the order is saved, a Supabase Edge Function (`send-order-notification`) sends the order summary screenshot and product images as a Telegram DM to the shopper's Telegram chat ID obtained from `initData`. If no shopper chat ID is available, it falls back to the configured `TARGET_CHAT_ID`.
 
 ### Persistence keys
 
@@ -249,12 +248,8 @@ AsyncStorage is only used for the local cache and theme:
    ```
 6. Add Edge Function secrets in the Supabase dashboard (Project Settings → Edge Functions → Secrets):
    - `TELEGRAM_BOT_TOKEN` — token from BotFather for the bot that sends order DMs.
-   - `TARGET_CHAT_ID` — Telegram chat ID of the admin/recipient.
-7. Add the admin's Telegram username to the client environment:
-   ```
-   EXPO_PUBLIC_ADMIN_TELEGRAM_USERNAME=admin_username
-   ```
-8. Build the web export (`npx expo export --platform web`) and deploy the `dist/` folder to a public HTTPS URL.
+   - `TARGET_CHAT_ID` — optional fallback Telegram chat ID used when the shopper's chat ID is not available.
+7. Build the web export (`npx expo export --platform web`) and deploy the `dist/` folder to a public HTTPS URL.
 9. Register the deployed URL as a Telegram Mini App with BotFather (`/myapps` or `/newapp`).
 
 ---
@@ -298,7 +293,7 @@ There is no ESLint or Prettier configuration present. If you add one, keep rules
 - **Placeholder images** are loaded from an external service (`placehold.co`) over HTTPS. If network access is restricted, those images will not render.
 - Admin product images are uploaded to Supabase Storage. Storage objects are not automatically deleted when a product is removed (deletion is best-effort).
 - **Telegram initData.** The app reads `initData` to obtain the Telegram user context, but it does not validate the initData signature server-side in this MVP. If you use initData for authorization or personalization, validate the hash on your backend.
-- **Telegram bot token.** The `TELEGRAM_BOT_TOKEN` and `TARGET_CHAT_ID` used for order notifications are stored as Supabase Edge Function secrets and are never included in the client bundle. Do not add them to `.env` or expose them in the frontend.
+- **Telegram bot token and chat ID.** The `TELEGRAM_BOT_TOKEN` and optional `TARGET_CHAT_ID` used for order notifications are stored as Supabase Edge Function secrets and are never included in the client bundle. Do not add them to `.env` or expose them in the frontend.
 
 ---
 

@@ -17,6 +17,7 @@ interface OrderPayload {
   total: number;
   phoneNumber?: string;
   location?: string;
+  chatId?: string;
   summaryImageBase64?: string;
   productImageUrls?: string[];
 }
@@ -122,9 +123,9 @@ serve(async (req) => {
 
   try {
     const token = Deno.env.get('TELEGRAM_BOT_TOKEN');
-    const chatId = Deno.env.get('TARGET_CHAT_ID');
+    const defaultChatId = Deno.env.get('TARGET_CHAT_ID');
 
-    if (!token || !chatId) {
+    if (!token) {
       return new Response(
         JSON.stringify({ error: 'Server configuration missing' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -132,6 +133,14 @@ serve(async (req) => {
     }
 
     const payload: OrderPayload = await req.json();
+    const chatId = payload.chatId ?? defaultChatId;
+
+    if (!chatId) {
+      return new Response(
+        JSON.stringify({ error: 'No chat ID provided' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     const caption = formatCaption(payload);
 
     if (payload.summaryImageBase64) {

@@ -7,6 +7,7 @@ interface OrderNotificationPayload {
   total: number;
   phoneNumber?: string;
   location?: string;
+  chatId?: string;
   summaryImageBase64?: string;
   productImageUrls?: string[];
 }
@@ -60,7 +61,8 @@ export function buildNotificationPayload(
   cartTotal: number,
   colors: ColorPalette,
   phoneNumber?: string,
-  location?: string
+  location?: string,
+  chatId?: string
 ): OrderNotificationPayload {
   const summaryImageBase64 =
     typeof document !== 'undefined' ? createWebSummaryImage(cart, cartTotal, colors) : undefined;
@@ -79,6 +81,7 @@ export function buildNotificationPayload(
     total: cartTotal,
     phoneNumber,
     location,
+    chatId,
     summaryImageBase64: summaryImageBase64 ?? undefined,
     productImageUrls,
   };
