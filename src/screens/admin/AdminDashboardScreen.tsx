@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react';
+import { useState } from 'react';
 import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,7 +16,7 @@ import { Screen } from '../../components/Screen';
 import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
 import { AdminHeader } from '../../components/AdminHeader';
-import { ThemeToggle } from '../../components/ThemeToggle';
+import { AdminExitButton } from '../../components/AdminExitButton';
 import { useApp } from '../../context/AppContext';
 import { useResponsive } from '../../hooks/useResponsive';
 import { showAlert } from '../../lib/telegram';
@@ -26,35 +26,6 @@ import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '
 
 const MAX_WIDTH = 1200;
 
-function AdminHeaderRight() {
-  const { signOutAdmin } = useApp();
-  const colors = useThemeColors();
-
-  return (
-    <View style={headerRightStyles.container}>
-      <ThemeToggle />
-      <TouchableOpacity onPress={signOutAdmin}>
-        <Text style={[headerRightStyles.text, { color: colors.danger }]}>
-          Exit admin
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-const headerRightStyles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginRight: spacing.sm,
-  },
-  text: {
-    fontSize: fontSizes.sm,
-    fontWeight: '600',
-  },
-});
-
 export function AdminDashboardScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AdminStackParamList>>();
   const { products, categories, deleteProduct, addCategory, removeCategory } = useApp();
@@ -63,13 +34,6 @@ export function AdminDashboardScreen() {
   const styles = makeStyles(colors);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [newCategory, setNewCategory] = useState('');
-
-  useLayoutEffect(() => {
-    if (Platform.OS === 'web') return;
-    navigation.setOptions({
-      headerRight: () => <AdminHeaderRight />,
-    });
-  }, [navigation]);
 
   async function handleDelete(id: string) {
     try {
@@ -123,6 +87,11 @@ export function AdminDashboardScreen() {
       {isWeb && <AdminHeader />}
       <Screen scroll noPadding edges={['left', 'right']}>
         <View style={styles.container}>
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>Admin Dashboard</Text>
+          <AdminExitButton />
+        </View>
+
         {successMessage && (
           <View style={styles.successBanner}>
             <Text style={styles.successText}>{successMessage}</Text>
@@ -276,8 +245,19 @@ const makeStyles = (colors: ColorPalette) =>
       width: '100%',
       alignSelf: 'center',
       paddingHorizontal: spacing.lg,
-      paddingTop: 0,
+      paddingTop: spacing.md,
       paddingBottom: spacing.md,
+    },
+    pageHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.md,
+    },
+    pageTitle: {
+      fontSize: fontSizes.xxl,
+      fontWeight: '700',
+      color: colors.text,
     },
     successBanner: {
       backgroundColor: colors.success,

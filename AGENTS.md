@@ -180,7 +180,7 @@ Actions:
 
 The app starts as a shopper by default. Inside Telegram, React Navigation screen headers are hidden and the app relies on Telegram's native `BackButton` (managed by `useTelegramBackButton`). Outside Telegram, the usual headers are shown.
 
-Admins reach `AdminLogin` by typing the secret keyword (`ADMIN_KEYWORD` in `src/constants/admin.ts`) into the home-screen search bar, then entering the password configured in `EXPO_PUBLIC_ADMIN_PASSWORD`.
+Admins reach `AdminLogin` by typing the secret keyword (`ADMIN_KEYWORD` in `src/constants/admin.ts`) into the home-screen search bar, then entering the password configured in `EXPO_PUBLIC_ADMIN_PASSWORD`. The admin role is intentionally not restored on reload; refreshing the Mini App returns the user to the shopper experience. An **Exit admin** button is available on every admin screen to sign out manually.
 
 Param lists are defined in `src/types/navigation.ts`.
 

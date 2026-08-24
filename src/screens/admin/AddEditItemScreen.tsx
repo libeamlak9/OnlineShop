@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components/Screen';
 import { Button } from '../../components/Button';
 import { AdminHeader } from '../../components/AdminHeader';
+import { AdminExitButton } from '../../components/AdminExitButton';
 import { useApp } from '../../context/AppContext';
 import { useResponsive } from '../../hooks/useResponsive';
 import { useTelegramBackButton } from '../../hooks/useTelegramBackButton';
@@ -149,7 +150,10 @@ export function AddEditItemScreen() {
       <Screen noPadding edges={['top', 'left', 'right']}>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <View style={styles.container}>
-          <Text style={styles.title}>{existing ? 'Edit Item' : 'Add New Item'}</Text>
+          <View style={styles.pageHeader}>
+            <Text style={styles.title}>{existing ? 'Edit Item' : 'Add New Item'}</Text>
+            <AdminExitButton />
+          </View>
 
           <View style={styles.field}>
             <Text style={styles.label}>Product Images</Text>
@@ -288,11 +292,16 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     paddingVertical: spacing.md,
     paddingBottom: spacing.xxl,
   },
+  pageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
   title: {
     fontSize: fontSizes.xxl,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: spacing.lg,
   },
   field: {
     marginBottom: spacing.lg,

@@ -5,6 +5,7 @@ import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react
 import { Screen } from '../../components/Screen';
 import { EmptyState } from '../../components/EmptyState';
 import { AdminHeader } from '../../components/AdminHeader';
+import { AdminExitButton } from '../../components/AdminExitButton';
 import { useApp } from '../../context/AppContext';
 import { useTelegramBackButton } from '../../hooks/useTelegramBackButton';
 import { getProductCoverImage } from '../../utils/images';
@@ -45,8 +46,13 @@ export function AdminUserOrdersScreen() {
       {isWeb && <AdminHeader />}
       <Screen noPadding edges={['top', 'left', 'right']}>
         <View style={styles.container}>
-        <Text style={styles.phoneNumber}>{phoneNumber}</Text>
-        <Text style={styles.subtitle}>{userOrders.length} order(s)</Text>
+        <View style={styles.pageHeader}>
+          <View>
+            <Text style={styles.phoneNumber}>{phoneNumber}</Text>
+            <Text style={styles.subtitle}>{userOrders.length} order(s)</Text>
+          </View>
+          <AdminExitButton />
+        </View>
 
         <FlatList
           data={userOrders}
@@ -109,6 +115,12 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
+  pageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.lg,
+  },
   phoneNumber: {
     fontSize: fontSizes.xxl,
     fontWeight: '700',
@@ -117,7 +129,6 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
   subtitle: {
     fontSize: fontSizes.md,
     color: colors.textSecondary,
-    marginBottom: spacing.lg,
   },
   card: {
     flexDirection: 'row',

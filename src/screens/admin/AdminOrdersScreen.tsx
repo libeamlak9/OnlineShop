@@ -5,6 +5,7 @@ import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import { Screen } from '../../components/Screen';
 import { EmptyState } from '../../components/EmptyState';
 import { AdminHeader } from '../../components/AdminHeader';
+import { AdminExitButton } from '../../components/AdminExitButton';
 import { useApp } from '../../context/AppContext';
 import { useTelegramBackButton } from '../../hooks/useTelegramBackButton';
 import { AdminStackParamList } from '../../types/navigation';
@@ -72,7 +73,10 @@ export function AdminOrdersScreen() {
       {isWeb && <AdminHeader />}
       <Screen noPadding edges={['top', 'left', 'right']}>
         <View style={styles.container}>
-        <Text style={styles.title}>Orders by Customer</Text>
+        <View style={styles.pageHeader}>
+          <Text style={styles.title}>Orders by Customer</Text>
+          <AdminExitButton />
+        </View>
         <FlatList
           data={userGroups}
           keyExtractor={(item) => item.phoneNumber}
@@ -116,11 +120,16 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
+  pageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
   title: {
     fontSize: fontSizes.xxl,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: spacing.lg,
   },
   card: {
     backgroundColor: colors.surface,

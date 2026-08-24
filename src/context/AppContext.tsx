@@ -232,25 +232,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       setIsHydrated(true);
 
-      // Check for an existing admin session.
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (session?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-          if (profile?.role === 'admin') {
-            dispatch({ type: 'SET_ROLE', payload: 'admin' });
-          }
-        }
-      } catch (error) {
-        console.error('Failed to restore admin session:', error);
-      }
-
       // Background sync from Supabase.
       try {
         const [remoteProducts, remoteOrders, remoteCategories] = await Promise.all([
