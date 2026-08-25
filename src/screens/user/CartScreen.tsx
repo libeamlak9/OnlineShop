@@ -9,12 +9,12 @@ import { EmptyState } from '../../components/EmptyState';
 import { WebHeader } from '../../components/WebHeader';
 import { Button } from '../../components/Button';
 import { useApp } from '../../context/AppContext';
-import { useTelegram } from '../../hooks/useTelegram';
+
 import {
   buildNotificationPayload,
   sendOrderNotification,
 } from '../../services/notifications';
-import { hapticNotification, showAlert } from '../../lib/telegram';
+import { hapticNotification, openTelegramChat, showAlert } from '../../lib/telegram';
 import { RootStackParamList } from '../../types/navigation';
 import { Order } from '../../types';
 import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../../constants/theme';
@@ -24,11 +24,14 @@ const MAX_WIDTH = 900;
 export function CartScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { cart, cartTotal, cartCount, updateCartQuantity, removeFromCart, addOrder, clearCart } = useApp();
-  const { telegramUser } = useTelegram();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
 
   const isWeb = Platform.OS === 'web';
+
+  function getAdminTelegramUsername(): string | undefined {
+    return process.env.EXPO_PUBLIC_ADMIN_TELEGRAM_USERNAME;
+  }
 
   async function handleSubmitOrder() {
     if (cart.length === 0) return;
@@ -55,8 +58,7 @@ export function CartScreen() {
           cartTotal,
           colors,
           '',
-          '',
-          telegramUser?.id?.toString()
+          ''
         );
         await sendOrderNotification(notificationPayload);
       } catch (notificationError) {
@@ -64,12 +66,16 @@ export function CartScreen() {
       }
 
       clearCart();
-      navigation.navigate('UserTabs', { screen: 'Orders' });
       hapticNotification('success');
       await showAlert(
         'Order Submitted',
-        `Thank you! Your ${orders.length} order${orders.length > 1 ? 's' : ''} have been submitted.`
+        `Thank you! Your ${orders.length} order${orders.length > 1 ? 's' : ''} have been submitted. Opening chat...`
       );
+
+      const adminUsername = getAdminTelegramUsername();
+      if (adminUsername) {
+        await openTelegramChat(adminUsername);
+      }
     } catch {
       hapticNotification('error');
       await showAlert('Error', 'Failed to place order. Please check your connection and try again.');

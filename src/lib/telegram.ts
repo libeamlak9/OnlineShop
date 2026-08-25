@@ -1,3 +1,4 @@
+import { Linking } from 'react-native';
 import {
   backButton,
   hapticFeedback,
@@ -290,4 +291,28 @@ export async function showConfirm(
   }
 
   return null;
+}
+
+/** Opens a Telegram user/channel chat and, when inside Telegram, closes the Mini App. */
+export async function openTelegramChat(username: string): Promise<void> {
+  const url = `https://t.me/${username.replace(/^@/, '')}`;
+
+  if (isTelegram()) {
+    try {
+      miniApp.close();
+    } catch {
+      // ignore if close is not supported
+    }
+  }
+
+  try {
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      window.open(url, '_blank');
+    }
+  } catch {
+    window.open(url, '_blank');
+  }
 }

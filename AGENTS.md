@@ -99,7 +99,7 @@ Always consult the exact versioned docs before writing code: <https://docs.expo.
     │       ├── HomeScreen.tsx            # Product grid with search, category filter, new arrivals
     │       ├── ProductDetailScreen.tsx   # Product gallery, details, add to cart / buy now
     │       ├── CartScreen.tsx            # Cart review and direct order submission
-    │       ├── OrdersScreen.tsx          # User order history
+    │       ├── OrdersScreen.tsx          # Empty placeholder; reserved for future use
     │       └── OrderDetailScreen.tsx     # Single order details
     ├── services/
     │   ├── cache.ts                # AsyncStorage cache helpers
@@ -215,7 +215,9 @@ Param lists are defined in `src/types/navigation.ts`.
 
 - The cart screen shows a **Submit Order** button that places the order immediately.
 - Each cart line item becomes a separate `Order` entry with `pending` status.
-- After the order is saved, a Supabase Edge Function (`send-order-notification`) sends the order summary screenshot and product images as a Telegram DM to the shopper's Telegram chat ID obtained from `initData`. If no shopper chat ID is available, it falls back to the configured `TARGET_CHAT_ID`.
+- After the order is saved, a Supabase Edge Function (`send-order-notification`) sends the order summary screenshot and product images as a Telegram DM to the configured `TARGET_CHAT_ID`.
+- The shopper is then redirected to the admin Telegram chat (`https://t.me/<EXPO_PUBLIC_ADMIN_TELEGRAM_USERNAME>`) so they can stay in the chat and message about the order.
+- The shopper **Orders** tab is kept in the navigator but is currently empty for future use.
 
 ### Persistence keys
 
