@@ -6,7 +6,7 @@ import { isTelegram } from '../lib/telegram';
 import { UserTabNavigator } from './UserTabNavigator';
 import { AdminStackNavigator } from './AdminStackNavigator';
 import { ProductDetailScreen } from '../screens/user/ProductDetailScreen';
-import { CheckoutScreen } from '../screens/user/CheckoutScreen';
+
 import { OrderDetailScreen } from '../screens/user/OrderDetailScreen';
 import { AdminLoginScreen } from '../screens/AdminLoginScreen';
 
@@ -41,11 +41,7 @@ export function AppNavigator() {
               component={ProductDetailScreen}
               options={{ headerShown: !inTelegram, title: 'Product' }}
             />
-            <Stack.Screen
-              name="Checkout"
-              component={CheckoutScreen}
-              options={{ headerShown: !inTelegram, title: 'Checkout' }}
-            />
+
             <Stack.Screen
               name="OrderDetail"
               component={OrderDetailScreen}

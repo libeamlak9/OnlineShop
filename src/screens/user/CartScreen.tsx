@@ -9,21 +9,71 @@ import { EmptyState } from '../../components/EmptyState';
 import { WebHeader } from '../../components/WebHeader';
 import { Button } from '../../components/Button';
 import { useApp } from '../../context/AppContext';
+import { useTelegram } from '../../hooks/useTelegram';
+import {
+  buildNotificationPayload,
+  sendOrderNotification,
+} from '../../services/notifications';
+import { hapticNotification, showAlert } from '../../lib/telegram';
 import { RootStackParamList } from '../../types/navigation';
+import { Order } from '../../types';
 import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../../constants/theme';
 
 const MAX_WIDTH = 900;
 
 export function CartScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { cart, cartTotal, cartCount, updateCartQuantity, removeFromCart } = useApp();
+  const { cart, cartTotal, cartCount, updateCartQuantity, removeFromCart, addOrder, clearCart } = useApp();
+  const { telegramUser } = useTelegram();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
 
   const isWeb = Platform.OS === 'web';
 
-  function handleSubmitOrder() {
-    navigation.navigate('Checkout');
+  async function handleSubmitOrder() {
+    if (cart.length === 0) return;
+
+    const paymentMethod = 'cash_on_delivery';
+    const baseTime = Date.now();
+    const orders: Order[] = cart.map((cartItem, index) => ({
+      id: (baseTime + index).toString(),
+      items: [cartItem],
+      total: cartItem.product.price * cartItem.quantity,
+      paymentMethod,
+      status: 'pending',
+      location: '',
+      phoneNumber: '',
+      createdAt: new Date().toISOString(),
+    }));
+
+    try {
+      await Promise.all(orders.map((order) => addOrder(order)));
+
+      try {
+        const notificationPayload = buildNotificationPayload(
+          cart,
+          cartTotal,
+          colors,
+          '',
+          '',
+          telegramUser?.id?.toString()
+        );
+        await sendOrderNotification(notificationPayload);
+      } catch (notificationError) {
+        console.error('Failed to send order notification:', notificationError);
+      }
+
+      clearCart();
+      navigation.navigate('UserTabs', { screen: 'Orders' });
+      hapticNotification('success');
+      await showAlert(
+        'Order Submitted',
+        `Thank you! Your ${orders.length} order${orders.length > 1 ? 's' : ''} have been submitted.`
+      );
+    } catch {
+      hapticNotification('error');
+      await showAlert('Error', 'Failed to place order. Please check your connection and try again.');
+    }
   }
 
   if (cart.length === 0) {

@@ -6,7 +6,7 @@ This file is written for AI coding agents working on the **Gold Fashion** projec
 
 ## Project overview
 
-Gold Fashion is a **Telegram Mini App** built with **Expo SDK 54** and **React Native** (rendered via `react-native-web`). It is a student shopping MVP that lets users browse school supplies, add items to a cart, check out, and view order history. It also provides an admin mode where products and categories can be created, edited, and deleted, and where orders can be reviewed by customer phone number.
+Gold Fashion is a **Telegram Mini App** built with **Expo SDK 54** and **React Native** (rendered via `react-native-web`). It is a student shopping MVP that lets users browse school supplies, add items to a cart, submit orders, and view order history. It also provides an admin mode where products and categories can be created, edited, and deleted, and where orders can be reviewed by customer phone number.
 
 Key facts:
 
@@ -98,8 +98,7 @@ Always consult the exact versioned docs before writing code: <https://docs.expo.
     │   └── user/
     │       ├── HomeScreen.tsx            # Product grid with search, category filter, new arrivals
     │       ├── ProductDetailScreen.tsx   # Product gallery, details, add to cart / buy now
-    │       ├── CartScreen.tsx            # Cart review and checkout navigation
-    │       ├── CheckoutScreen.tsx        # Delivery info, Ethiopian phone validation, payment
+    │       ├── CartScreen.tsx            # Cart review and direct order submission
     │       ├── OrdersScreen.tsx          # User order history
     │       └── OrderDetailScreen.tsx     # Single order details
     ├── services/
@@ -175,7 +174,7 @@ Actions:
 
 `AppNavigator.tsx` switches the root navigator based on `role`:
 
-- `role === 'user'` → `UserTabs` plus `ProductDetail`, `Checkout`, `OrderDetail`, and a hidden `AdminLogin` route
+- `role === 'user'` → `UserTabs` plus `ProductDetail`, `OrderDetail`, and a hidden `AdminLogin` route
 - `role === 'admin'` → `AdminStack` plus shared `ProductDetail` and `OrderDetail`
 
 The app starts as a shopper by default. Inside Telegram, React Navigation screen headers are hidden and the app relies on Telegram's native `BackButton` (managed by `useTelegramBackButton`). Outside Telegram, the usual headers are shown.
@@ -212,13 +211,10 @@ Param lists are defined in `src/types/navigation.ts`.
 - `utils/images.ts` provides `getProductCoverImage` and `getProductGalleryImages` for cover and gallery rendering.
 - `services/images.ts` handles upload, deletion, and URL parsing.
 
-### Checkout behavior
+### Order submission
 
-- The cart screen shows a **Submit Order** button that navigates to the checkout screen.
-- The checkout screen collects a delivery `location` and an Ethiopian phone number.
-- Phone numbers are validated with `isValidEthiopianPhoneNumber` in `src/utils/validation.ts`.
-- Cash on delivery creates orders with `pending` status; online payment creates orders with `paid` status.
-- Each cart line item becomes a separate `Order` entry, sharing the same location and phone number.
+- The cart screen shows a **Submit Order** button that places the order immediately.
+- Each cart line item becomes a separate `Order` entry with `pending` status.
 - After the order is saved, a Supabase Edge Function (`send-order-notification`) sends the order summary screenshot and product images as a Telegram DM to the shopper's Telegram chat ID obtained from `initData`. If no shopper chat ID is available, it falls back to the configured `TARGET_CHAT_ID`.
 
 ### Persistence keys
@@ -287,7 +283,7 @@ There is no ESLint or Prettier configuration present. If you add one, keep rules
 ## Security considerations
 
 - **Admin authentication.** Admin access requires signing in through Supabase Auth with the email/password configured in `EXPO_PUBLIC_ADMIN_EMAIL` and `EXPO_PUBLIC_ADMIN_PASSWORD`. Supabase RLS policies enforce that only authenticated admins can create, update, or delete products, categories, and product images. Shoppers remain unauthenticated.
-- **No real payment processing.** Card details entered on the checkout screen are validated only by length and are never transmitted or stored securely.
+- **No real payment processing.** No payment details are collected in this MVP.
 - **Public reads, authenticated writes.** Products and categories are readable by everyone so shoppers can browse. Orders can be placed without auth, but order history is only visible to admins in this MVP. Lock this down further with shopper authentication if you need per-user order history.
 - **Local cache.** AsyncStorage data is stored unencrypted on the device. Do not store real payment data, passwords, or PII in this app.
 - **Placeholder images** are loaded from an external service (`placehold.co`) over HTTPS. If network access is restricted, those images will not render.

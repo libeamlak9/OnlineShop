@@ -19,6 +19,5 @@ export type RootStackParamList = {
   AdminStack: NavigatorScreenParams<AdminStackParamList>;
   AdminLogin: undefined;
   ProductDetail: { productId: string };
-  Checkout: undefined;
   OrderDetail: { orderId: string };
 };
