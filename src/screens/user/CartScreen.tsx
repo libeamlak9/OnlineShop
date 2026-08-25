@@ -52,6 +52,7 @@ export function CartScreen() {
     try {
       await Promise.all(orders.map((order) => addOrder(order)));
 
+      let notificationResult: { success: boolean; chatId?: string } = { success: false };
       try {
         const notificationPayload = buildNotificationPayload(
           cart,
@@ -60,7 +61,8 @@ export function CartScreen() {
           '',
           ''
         );
-        await sendOrderNotification(notificationPayload);
+        notificationResult = await sendOrderNotification(notificationPayload);
+        console.log('Order notification result:', notificationResult);
       } catch (notificationError) {
         console.error('Failed to send order notification:', notificationError);
       }
@@ -69,7 +71,7 @@ export function CartScreen() {
       hapticNotification('success');
       await showAlert(
         'Order Submitted',
-        `Thank you! Your ${orders.length} order${orders.length > 1 ? 's' : ''} have been submitted. Opening chat...`
+        `Thank you! Your ${orders.length} order${orders.length > 1 ? 's' : ''} have been submitted.\n\nChat ID: ${notificationResult.chatId ?? 'unknown'}`
       );
 
       const adminUsername = getAdminTelegramUsername();

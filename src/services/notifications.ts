@@ -35,7 +35,7 @@ function getEdgeFunctionUrl(functionName: string): string | null {
 
 export async function sendOrderNotification(
   payload: OrderNotificationPayload
-): Promise<void> {
+): Promise<{ success: boolean; chatId?: string }> {
   const url = getEdgeFunctionUrl('send-order-notification');
   if (!url) {
     throw new Error('Supabase project URL is not configured');
@@ -50,10 +50,13 @@ export async function sendOrderNotification(
     body: JSON.stringify(payload),
   });
 
+  const result = await response.json().catch(() => ({}));
+
   if (!response.ok) {
-    const result = await response.json().catch(() => ({}));
     throw new Error(result.error || `Notification failed (${response.status})`);
   }
+
+  return result;
 }
 
 export function buildNotificationPayload(
