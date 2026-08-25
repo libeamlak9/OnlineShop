@@ -7,6 +7,7 @@ import {
   isTMA,
   mainButton,
   miniApp,
+  openTelegramLink,
   popup,
   themeParams,
   viewport,
@@ -293,15 +294,16 @@ export async function showConfirm(
   return null;
 }
 
-/** Opens a Telegram user/channel chat and, when inside Telegram, closes the Mini App. */
+/** Opens a Telegram user/channel chat. Inside Telegram this closes the Mini App and opens the chat natively. */
 export async function openTelegramChat(username: string): Promise<void> {
   const url = `https://t.me/${username.replace(/^@/, '')}`;
 
   if (isTelegram()) {
     try {
-      miniApp.close();
+      openTelegramLink(url);
+      return;
     } catch {
-      // ignore if close is not supported
+      // fall through to browser fallback
     }
   }
 

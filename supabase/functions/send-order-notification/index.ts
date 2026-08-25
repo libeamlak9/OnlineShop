@@ -17,7 +17,6 @@ interface OrderPayload {
   total: number;
   phoneNumber?: string;
   location?: string;
-  chatId?: string;
   summaryImageBase64?: string;
   productImageUrls?: string[];
 }
@@ -133,7 +132,7 @@ serve(async (req) => {
     }
 
     const payload: OrderPayload = await req.json();
-    const chatId = payload.chatId ?? defaultChatId;
+    const chatId = defaultChatId;
 
     if (!chatId) {
       return new Response(
@@ -141,6 +140,8 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Sending order notification to chat:', chatId);
     const caption = formatCaption(payload);
 
     if (payload.summaryImageBase64) {
