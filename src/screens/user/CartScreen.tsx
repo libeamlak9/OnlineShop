@@ -10,11 +10,8 @@ import { WebHeader } from '../../components/WebHeader';
 import { Button } from '../../components/Button';
 import { useApp } from '../../context/AppContext';
 
-import {
-  buildNotificationPayload,
-  sendOrderNotification,
-} from '../../services/notifications';
-import { hapticNotification, openTelegramChat, showAlert } from '../../lib/telegram';
+import { hapticNotification, showAlert } from '../../lib/telegram';
+import { shareOrderImagesOnly } from '../../utils/share';
 import { RootStackParamList } from '../../types/navigation';
 import { Order } from '../../types';
 import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../../constants/theme';
@@ -28,10 +25,6 @@ export function CartScreen() {
   const styles = makeStyles(colors);
 
   const isWeb = Platform.OS === 'web';
-
-  function getAdminTelegramUsername(): string | undefined {
-    return process.env.EXPO_PUBLIC_ADMIN_TELEGRAM_USERNAME;
-  }
 
   async function handleSubmitOrder() {
     if (cart.length === 0) return;
@@ -52,32 +45,22 @@ export function CartScreen() {
     try {
       await Promise.all(orders.map((order) => addOrder(order)));
 
-      let notificationResult: { success: boolean; chatId?: string } = { success: false };
+      let shared = false;
       try {
-        const notificationPayload = buildNotificationPayload(
-          cart,
-          cartTotal,
-          colors,
-          '',
-          ''
-        );
-        notificationResult = await sendOrderNotification(notificationPayload);
-        console.log('Order notification result:', notificationResult);
-      } catch (notificationError) {
-        console.error('Failed to send order notification:', notificationError);
+        shared = await shareOrderImagesOnly(cart, cartTotal, colors);
+        console.log('Order images shared:', shared);
+      } catch (shareError) {
+        console.error('Failed to share order images:', shareError);
       }
 
       clearCart();
       hapticNotification('success');
       await showAlert(
         'Order Submitted',
-        `Thank you! Your ${orders.length} order${orders.length > 1 ? 's' : ''} have been submitted.\n\nChat ID: ${notificationResult.chatId ?? 'unknown'}`
+        shared
+          ? `Thank you! Your ${orders.length} order${orders.length > 1 ? 's' : ''} have been submitted. Select the admin chat in the share sheet.`
+          : `Thank you! Your ${orders.length} order${orders.length > 1 ? 's' : ''} have been submitted, but sharing is not supported on this device.`
       );
-
-      const adminUsername = getAdminTelegramUsername();
-      if (adminUsername) {
-        await openTelegramChat(adminUsername);
-      }
     } catch {
       hapticNotification('error');
       await showAlert('Error', 'Failed to place order. Please check your connection and try again.');

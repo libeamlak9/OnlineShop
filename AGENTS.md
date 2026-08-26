@@ -215,8 +215,7 @@ Param lists are defined in `src/types/navigation.ts`.
 
 - The cart screen shows a **Submit Order** button that places the order immediately.
 - Each cart line item becomes a separate `Order` entry with `pending` status.
-- After the order is saved, a Supabase Edge Function (`send-order-notification`) sends the order summary screenshot and product images as a Telegram DM to the configured `TARGET_CHAT_ID`.
-- The shopper is then redirected to the admin Telegram chat (`https://t.me/<EXPO_PUBLIC_ADMIN_TELEGRAM_USERNAME>`) so they can stay in the chat and message about the order.
+- After the order is saved, the device’s native share sheet opens with the order summary screenshot and product images. The shopper selects the admin chat and sends the images, creating a private chat between shopper and admin.
 - The shopper **Orders** tab is kept in the navigator but is currently empty for future use.
 
 ### Persistence keys

@@ -1,6 +1,8 @@
 import { Platform, Share } from 'react-native';
 import { File as ExpoFile, Paths } from 'expo-file-system';
 import { CartItem } from '../types';
+import { ColorPalette } from '../constants/theme';
+import { createWebSummaryImage } from './summaryImage';
 
 export function formatOrderMessage(
   cart: CartItem[],
@@ -210,4 +212,62 @@ export async function shareOrder(
 
   // Fallback for Expo Go or if react-native-share is unavailable.
   return shareWithBuiltIn(cart, cartTotal);
+}
+
+/**
+ * Shares only the order summary image and product images (no text) using the
+ * Web Share API. The shopper picks the recipient chat. Returns true if the
+ * share sheet was opened, false otherwise.
+ */
+export async function shareOrderImagesOnly(
+  cart: CartItem[],
+  cartTotal: number,
+  colors: ColorPalette
+): Promise<boolean> {
+  if (typeof navigator === 'undefined' || !navigator.share) {
+    return false;
+  }
+
+  const summaryImageUri = createWebSummaryImage(cart, cartTotal, colors);
+
+  const files: File[] = [];
+
+  if (summaryImageUri) {
+    const summaryFile = dataUriToFile(
+      summaryImageUri,
+      `order-summary-${Date.now()}.png`
+    );
+    if (summaryFile) files.push(summaryFile);
+  }
+
+  const productFiles = await Promise.all(
+    cart.map(async (item, index) => {
+      const uri = item.product.images[item.selectedImageIndex ?? 0];
+      if (!uri) return null;
+      const extension = uri.split('.').pop()?.split('?')[0] || 'jpg';
+      const filename = `product-${index + 1}-${item.product.id}.${extension}`;
+      return urlToFile(uri, filename);
+    })
+  );
+
+  for (const file of productFiles) {
+    if (file) files.push(file);
+  }
+
+  if (files.length === 0) return false;
+
+  const canShareFiles = navigator.canShare && navigator.canShare({ files });
+  if (!canShareFiles) return false;
+
+  try {
+    // Share only files — no title or text.
+    await navigator.share({ files });
+    return true;
+  } catch (error) {
+    // User canceled the share sheet — treat it as shared to match native behavior.
+    if (error instanceof Error && error.name === 'AbortError') {
+      return true;
+    }
+    return false;
+  }
 }
