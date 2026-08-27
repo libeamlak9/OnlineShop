@@ -2,16 +2,12 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 
 export type UserTabParamList = {
   Home: undefined;
-  Cart: undefined;
-  Orders: undefined;
 };
 
 export type AdminStackParamList = {
   AdminDashboard: undefined;
   AdminProducts: undefined;
   AddEditItem: { productId?: string } | undefined;
-  AdminOrders: undefined;
-  AdminUserOrders: { phoneNumber: string };
 };
 
 export type RootStackParamList = {
@@ -19,5 +15,4 @@ export type RootStackParamList = {
   AdminStack: NavigatorScreenParams<AdminStackParamList>;
   AdminLogin: undefined;
   ProductDetail: { productId: string };
-  OrderDetail: { orderId: string };
 };

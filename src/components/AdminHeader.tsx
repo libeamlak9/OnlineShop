@@ -57,12 +57,6 @@ export function AdminHeader() {
             onPress={() => navigation.navigate('AdminDashboard')}
           />
           <NavLink
-            name="AdminOrders"
-            label="Orders"
-            current={current}
-            onPress={() => navigation.navigate('AdminOrders')}
-          />
-          <NavLink
             name="AddEditItem"
             label="Add Item"
             current={current}

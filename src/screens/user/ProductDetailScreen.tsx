@@ -3,7 +3,6 @@ import { Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-  Dimensions,
   FlatList,
   Image,
   NativeScrollEvent,
@@ -16,12 +15,9 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Screen } from '../../components/Screen';
-import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
 import { useApp } from '../../context/AppContext';
 import { useResponsive } from '../../hooks/useResponsive';
-import { useTelegram } from '../../hooks/useTelegram';
-import { useTelegramMainButton } from '../../hooks/useTelegramMainButton';
 import { useTelegramBackButton } from '../../hooks/useTelegramBackButton';
 import { getProductGalleryImages } from '../../utils/images';
 import { RootStackParamList } from '../../types/navigation';
@@ -34,26 +30,15 @@ export function ProductDetailScreen() {
   const route = useRoute();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { productId } = route.params as { productId: string };
-  const { products, addToCart } = useApp();
+  const { products } = useApp();
   const { isDesktop } = useResponsive();
   const { width: windowWidth } = useWindowDimensions();
-  const { isInTelegram } = useTelegram();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const product = products.find((p) => p.id === productId);
   const isWebDesktop = Platform.OS === 'web' && isDesktop;
-
-  useTelegramMainButton({
-    text: 'Add to Cart',
-    onClick: () => {
-      if (!product) return;
-      addToCart(product, activeIndex);
-      navigation.goBack();
-    },
-    visible: !isWebDesktop && !!product,
-  });
 
   useTelegramBackButton(true, () => navigation.goBack());
 
@@ -93,19 +78,6 @@ export function ProductDetailScreen() {
         <Text style={styles.variantLabel}>
           Variant {activeIndex + 1} of {galleryImages.length}
         </Text>
-      )}
-
-      {!isInTelegram && (
-        <View style={styles.actions}>
-          <Button
-            title="Add to Cart"
-            onPress={() => {
-              addToCart(product, activeIndex);
-              navigation.goBack();
-            }}
-            style={styles.actionButton}
-          />
-        </View>
       )}
 
       {product.description.length > 0 && (
@@ -353,14 +325,5 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     fontSize: fontSizes.md,
     color: colors.textSecondary,
     lineHeight: 24,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.xl,
-  },
-  actionButton: {
-    flex: 1,
-    maxWidth: 220,
   },
 });

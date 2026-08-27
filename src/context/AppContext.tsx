@@ -6,7 +6,7 @@ import {
   useReducer,
   useState,
 } from 'react';
-import { AppAction, AppState, CartItem, Order, Product, Role, Theme } from '../types';
+import { AppAction, AppState, Product, Role, Theme } from '../types';
 import { loadTheme, saveTheme } from '../utils/storage';
 import { supabase } from '../lib/supabase';
 import {
@@ -18,13 +18,6 @@ import {
   subscribeToProducts,
   updateProduct,
 } from '../services/products';
-import {
-  createOrder,
-  fetchOrders,
-  loadOrdersFromCache,
-  saveOrdersToCache,
-  subscribeToOrders,
-} from '../services/orders';
 import {
   createCategory,
   deleteCategory,
@@ -39,8 +32,6 @@ const initialState: AppState = {
   role: 'user',
   theme: 'light',
   products: [],
-  cart: [],
-  orders: [],
   categories: [],
 };
 
@@ -69,85 +60,6 @@ function reducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         products: state.products.filter((p) => p.id !== action.payload),
-      };
-
-    case 'ADD_TO_CART': {
-      const { product, selectedImageIndex } = action.payload;
-      const existing = state.cart.find(
-        (item) =>
-          item.product.id === product.id &&
-          item.selectedImageIndex === selectedImageIndex
-      );
-      if (existing) {
-        return {
-          ...state,
-          cart: state.cart.map((item) =>
-            item.product.id === product.id &&
-            item.selectedImageIndex === selectedImageIndex
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
-          ),
-        };
-      }
-      return {
-        ...state,
-        cart: [
-          ...state.cart,
-          { product, quantity: 1, selectedImageIndex },
-        ],
-      };
-    }
-
-    case 'REMOVE_FROM_CART':
-      return {
-        ...state,
-        cart: state.cart.filter(
-          (item) =>
-            !(
-              item.product.id === action.payload.productId &&
-              item.selectedImageIndex === action.payload.selectedImageIndex
-            )
-        ),
-      };
-
-    case 'UPDATE_CART_QUANTITY': {
-      const { productId, selectedImageIndex, quantity } = action.payload;
-      if (quantity <= 0) {
-        return {
-          ...state,
-          cart: state.cart.filter(
-            (item) =>
-              !(
-                item.product.id === productId &&
-                item.selectedImageIndex === selectedImageIndex
-              )
-          ),
-        };
-      }
-      return {
-        ...state,
-        cart: state.cart.map((item) =>
-          item.product.id === productId &&
-          item.selectedImageIndex === selectedImageIndex
-            ? { ...item, quantity }
-            : item
-        ),
-      };
-    }
-
-    case 'CLEAR_CART':
-      return { ...state, cart: [] };
-
-    case 'SET_ORDERS':
-      return { ...state, orders: action.payload };
-
-    case 'ADD_ORDER':
-      return { ...state, orders: [action.payload, ...state.orders] };
-
-    case 'DELETE_ORDER':
-      return {
-        ...state,
-        orders: state.orders.filter((o) => o.id !== action.payload),
       };
 
     case 'SET_CATEGORIES':
@@ -189,20 +101,9 @@ interface AppContextValue extends AppState {
   addProduct: (product: Product) => Promise<void>;
   updateProduct: (product: Product) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
-  addToCart: (product: Product, selectedImageIndex?: number) => void;
-  removeFromCart: (productId: string, selectedImageIndex: number) => void;
-  updateCartQuantity: (
-    productId: string,
-    selectedImageIndex: number,
-    quantity: number
-  ) => void;
-  clearCart: () => void;
-  addOrder: (order: Order) => Promise<void>;
   setCategories: (categories: string[]) => void;
   addCategory: (category: string) => Promise<void>;
   removeCategory: (category: string) => Promise<void>;
-  cartTotal: number;
-  cartCount: number;
 }
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -218,25 +119,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_THEME', payload: storedTheme });
       }
 
-      const [cachedProducts, cachedOrders, cachedCategories] = await Promise.all([
+      const [cachedProducts, cachedCategories] = await Promise.all([
         loadProductsFromCache(),
-        loadOrdersFromCache(),
         loadCategoriesFromCache(),
       ]);
 
       const migratedProducts = migrateLegacyProducts(cachedProducts);
 
       dispatch({ type: 'SET_PRODUCTS', payload: migratedProducts });
-      dispatch({ type: 'SET_ORDERS', payload: cachedOrders });
       dispatch({ type: 'SET_CATEGORIES', payload: cachedCategories });
 
       setIsHydrated(true);
 
       // Background sync from Supabase.
       try {
-        const [remoteProducts, remoteOrders, remoteCategories] = await Promise.all([
+        const [remoteProducts, remoteCategories] = await Promise.all([
           fetchProducts(),
-          fetchOrders(),
           fetchCategories(),
         ]);
 
@@ -244,9 +142,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           dispatch({ type: 'SET_PRODUCTS', payload: remoteProducts });
           await saveProductsToCache(remoteProducts);
         }
-
-        dispatch({ type: 'SET_ORDERS', payload: remoteOrders });
-        await saveOrdersToCache(remoteOrders);
 
         if (remoteCategories.length > 0) {
           dispatch({ type: 'SET_CATEGORIES', payload: remoteCategories });
@@ -267,11 +162,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await saveProductsToCache(products);
     });
 
-    const unsubscribeOrders = subscribeToOrders(async (orders) => {
-      dispatch({ type: 'SET_ORDERS', payload: orders });
-      await saveOrdersToCache(orders);
-    });
-
     const unsubscribeCategories = subscribeToCategories(async (categories) => {
       dispatch({ type: 'SET_CATEGORIES', payload: categories });
       await saveCategoriesToCache(categories);
@@ -279,7 +169,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     return () => {
       unsubscribeProducts();
-      unsubscribeOrders();
       unsubscribeCategories();
     };
   }, [isHydrated]);
@@ -288,12 +177,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!isHydrated) return;
     saveTheme(state.theme);
   }, [state.theme, isHydrated]);
-
-  const cartTotal = state.cart.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0
-  );
-  const cartCount = state.cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const value: AppContextValue = {
     ...state,
@@ -352,35 +235,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to delete product');
       }
     },
-    addToCart: (product, selectedImageIndex = product.coverImageIndex ?? 0) =>
-      dispatch({
-        type: 'ADD_TO_CART',
-        payload: { product, selectedImageIndex },
-      }),
-    removeFromCart: (productId, selectedImageIndex) =>
-      dispatch({
-        type: 'REMOVE_FROM_CART',
-        payload: { productId, selectedImageIndex },
-      }),
-    updateCartQuantity: (productId, selectedImageIndex, quantity) =>
-      dispatch({
-        type: 'UPDATE_CART_QUANTITY',
-        payload: { productId, selectedImageIndex, quantity },
-      }),
-    clearCart: () => dispatch({ type: 'CLEAR_CART' }),
-    addOrder: async (order) => {
-      const previous = state.orders;
-      const optimistic = [order, ...previous];
-      dispatch({ type: 'ADD_ORDER', payload: order });
-      await saveOrdersToCache(optimistic);
-      try {
-        await createOrder(order);
-      } catch {
-        dispatch({ type: 'DELETE_ORDER', payload: order.id });
-        await saveOrdersToCache(previous);
-        throw new Error('Failed to place order');
-      }
-    },
     setCategories: (categories) =>
       dispatch({ type: 'SET_CATEGORIES', payload: categories }),
     addCategory: async (category) => {
@@ -410,8 +264,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to remove category');
       }
     },
-    cartTotal,
-    cartCount,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

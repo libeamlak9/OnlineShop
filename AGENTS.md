@@ -6,15 +6,15 @@ This file is written for AI coding agents working on the **Gold Fashion** projec
 
 ## Project overview
 
-Gold Fashion is a **Telegram Mini App** built with **Expo SDK 54** and **React Native** (rendered via `react-native-web`). It is a student shopping MVP that lets users browse school supplies, add items to a cart, submit orders, and view order history. It also provides an admin mode where products and categories can be created, edited, and deleted, and where orders can be reviewed by customer phone number.
+Gold Fashion is a **Telegram Mini App** built with **Expo SDK 54** and **React Native** (rendered via `react-native-web`). It is a product-catalog MVP that lets users browse products, search by name, and filter by category. It also provides an admin mode where products and categories can be created, edited, and deleted.
 
 Key facts:
 
-- **Supabase** is the source of truth for products, orders, and categories. AsyncStorage is used as a local cache for instant UI rendering.
+- **Supabase** is the source of truth for products and categories. AsyncStorage is used as a local cache for instant UI rendering.
 - Reads are cache-first: the app shows cached data immediately and refreshes from Supabase in the background.
 - Writes are optimistic: the UI updates immediately, then syncs to Supabase. Realtime subscriptions keep clients in sync.
 - No real shopper authentication in this phase. Row Level Security policies allow public read/write for the MVP.
-- No real payment gateway. Online payment is simulated.
+- This is a product viewer only; there is no cart, checkout, or payment flow.
 - The app is delivered as a **Telegram Mini App**: a static web export loaded inside Telegram's webview on Android, iOS, desktop, and Web Telegram.
 - Entry point: `index.ts` registers `App.tsx` as the root component.
 - Inside Telegram, the app uses Telegram-native UX primitives (`MainButton`, `BackButton`, popup, haptics) and hides React Navigation headers and web-only headers (`WebHeader`, `AdminHeader`). Outside Telegram, the app still runs as a normal web app for development.
@@ -88,24 +88,18 @@ Always consult the exact versioned docs before writing code: <https://docs.expo.
     ├── navigation/
     │   ├── AppNavigator.tsx        # Root navigator; role-based routing; hides headers in Telegram
     │   ├── AdminStackNavigator.tsx # Admin screens stack
-    │   └── UserTabNavigator.tsx    # Student bottom-tabs (Home, Cart, Orders)
+    │   └── UserTabNavigator.tsx    # Shopper bottom-tabs (Home)
     ├── screens/
     │   ├── admin/
     │   │   ├── AdminDashboardScreen.tsx  # Product/category management and stats
-    │   │   ├── AdminOrdersScreen.tsx     # Orders grouped by customer phone number
-    │   │   ├── AdminUserOrdersScreen.tsx # All orders for a single phone number
     │   │   └── AddEditItemScreen.tsx     # Create/edit product with multi-image upload
     │   └── user/
-    │       ├── HomeScreen.tsx            # Product grid with search, category filter, new arrivals
-    │       ├── ProductDetailScreen.tsx   # Product gallery, details, add to cart / buy now
-    │       ├── CartScreen.tsx            # Cart review and direct order submission
-    │       ├── OrdersScreen.tsx          # Empty placeholder; reserved for future use
-    │       └── OrderDetailScreen.tsx     # Single order details
+    │       ├── HomeScreen.tsx            # Product grid with search and category filter
+    │       └── ProductDetailScreen.tsx   # Product gallery and details
     ├── services/
     │   ├── cache.ts                # AsyncStorage cache helpers
     │   ├── categories.ts           # Category CRUD + realtime
     │   ├── images.ts               # Supabase Storage upload/delete
-    │   ├── orders.ts               # Order CRUD + realtime
     │   └── products.ts             # Product CRUD + realtime
     ├── types/
     │   ├── index.ts                # Domain types (Product, Order, CartItem, etc.)
@@ -156,26 +150,23 @@ npx tsc --noEmit
 
 All shared state lives in `src/context/AppContext.tsx`:
 
-- A single `useReducer` manages `role`, `products`, `cart`, `orders`, and `categories`.
-- On first mount the app loads products, orders, and categories from the AsyncStorage cache immediately so the UI renders without waiting on the network.
+- A single `useReducer` manages `role`, `products`, and `categories`.
+- On first mount the app loads products and categories from the AsyncStorage cache immediately so the UI renders without waiting on the network.
 - A background sync then fetches fresh data from Supabase and replaces the local cache and state.
 - Mutations are optimistic: the reducer updates local state first, the cache is updated, and then the change is sent to Supabase. If the call fails, the local change is rolled back.
-- Supabase Realtime subscriptions listen for product, order, and category changes and refresh the local state + cache automatically.
-- Derived values (`cartTotal`, `cartCount`) are computed at render time.
+- Supabase Realtime subscriptions listen for product and category changes and refresh the local state + cache automatically.
 
 Actions:
 
 - `SET_ROLE`, `SET_PRODUCTS`, `ADD_PRODUCT`, `UPDATE_PRODUCT`, `DELETE_PRODUCT`
-- `ADD_TO_CART`, `REMOVE_FROM_CART`, `UPDATE_CART_QUANTITY`, `CLEAR_CART`
-- `SET_ORDERS`, `ADD_ORDER`, `DELETE_ORDER`
 - `SET_CATEGORIES`, `ADD_CATEGORY`, `REMOVE_CATEGORY`
 
 ### Navigation
 
 `AppNavigator.tsx` switches the root navigator based on `role`:
 
-- `role === 'user'` → `UserTabs` plus `ProductDetail`, `OrderDetail`, and a hidden `AdminLogin` route
-- `role === 'admin'` → `AdminStack` plus shared `ProductDetail` and `OrderDetail`
+- `role === 'user'` → `UserTabs` plus `ProductDetail` and a hidden `AdminLogin` route
+- `role === 'admin'` → `AdminStack` plus shared `ProductDetail`
 
 The app starts as a shopper by default. Inside Telegram, React Navigation screen headers are hidden and the app relies on Telegram's native `BackButton` (managed by `useTelegramBackButton`). Outside Telegram, the usual headers are shown.
 
@@ -196,11 +187,7 @@ Param lists are defined in `src/types/navigation.ts`.
 ### Data model
 
 - `Product`: `id`, `name`, `description`, `price`, `category`, `images` (string array), `coverImageIndex`, `createdAt`
-- `CartItem`: `{ product, quantity }`
-- `Order`: `id`, `items`, `total`, `paymentMethod`, `status`, `location`, `phoneNumber`, `createdAt`
-- `Category`: arbitrary string; defaults are `School Uniform`, `Stationery`, `Books`, `Sports`, `Electronics`, `Accessories`
-- `PaymentMethod`: `cash_on_delivery` | `online_payment`
-- `OrderStatus`: `pending` | `paid` | `delivered`
+- `Category`: arbitrary string; defaults are `Clothing`, `Books`, `Sports`, `Electronics`, `Accessories`
 
 ### Images
 
@@ -211,19 +198,11 @@ Param lists are defined in `src/types/navigation.ts`.
 - `utils/images.ts` provides `getProductCoverImage` and `getProductGalleryImages` for cover and gallery rendering.
 - `services/images.ts` handles upload, deletion, and URL parsing.
 
-### Order submission
-
-- The cart screen shows a **Submit Order** button that places the order immediately.
-- Each cart line item becomes a separate `Order` entry with `pending` status.
-- After the order is saved, the device’s native share sheet opens with the order summary screenshot and product images. The shopper selects the admin chat and sends the images, creating a private chat between shopper and admin.
-- The shopper **Orders** tab is kept in the navigator but is currently empty for future use.
-
 ### Persistence keys
 
 AsyncStorage is only used for the local cache and theme:
 
 - `@onlineshop_products` (cache)
-- `@onlineshop_orders` (cache)
 - `@onlineshop_categories` (cache)
 - `@onlineshop_theme`
 
@@ -239,15 +218,8 @@ AsyncStorage is only used for the local cache and theme:
    EXPO_PUBLIC_SUPABASE_ANON_KEY=<your-anon-public-key>
    ```
 4. Run the migration in `supabase/migrations/001_initial_schema.sql` from the Supabase SQL Editor.
-5. Deploy the `send-order-notification` Edge Function:
-   ```bash
-   supabase functions deploy send-order-notification
-   ```
-6. Add Edge Function secrets in the Supabase dashboard (Project Settings → Edge Functions → Secrets):
-   - `TELEGRAM_BOT_TOKEN` — token from BotFather for the bot that sends order DMs.
-   - `TARGET_CHAT_ID` — optional fallback Telegram chat ID used when the shopper's chat ID is not available.
-7. Build the web export (`npx expo export --platform web`) and deploy the `dist/` folder to a public HTTPS URL.
-9. Register the deployed URL as a Telegram Mini App with BotFather (`/myapps` or `/newapp`).
+5. Build the web export (`npx expo export --platform web`) and deploy the `dist/` folder to a public HTTPS URL.
+6. Register the deployed URL as a Telegram Mini App with BotFather (`/myapps` or `/newapp`).
 
 ---
 
@@ -284,13 +256,13 @@ There is no ESLint or Prettier configuration present. If you add one, keep rules
 ## Security considerations
 
 - **Admin authentication.** Admin access requires signing in through Supabase Auth with the email/password configured in `EXPO_PUBLIC_ADMIN_EMAIL` and `EXPO_PUBLIC_ADMIN_PASSWORD`. Supabase RLS policies enforce that only authenticated admins can create, update, or delete products, categories, and product images. Shoppers remain unauthenticated.
-- **No real payment processing.** No payment details are collected in this MVP.
-- **Public reads, authenticated writes.** Products and categories are readable by everyone so shoppers can browse. Orders can be placed without auth, but order history is only visible to admins in this MVP. Lock this down further with shopper authentication if you need per-user order history.
+- **No payment or checkout.** This app is a product viewer only.
+- **Public reads, authenticated writes.** Products and categories are readable by everyone so shoppers can browse.
 - **Local cache.** AsyncStorage data is stored unencrypted on the device. Do not store real payment data, passwords, or PII in this app.
 - **Placeholder images** are loaded from an external service (`placehold.co`) over HTTPS. If network access is restricted, those images will not render.
 - Admin product images are uploaded to Supabase Storage. Storage objects are not automatically deleted when a product is removed (deletion is best-effort).
 - **Telegram initData.** The app reads `initData` to obtain the Telegram user context, but it does not validate the initData signature server-side in this MVP. If you use initData for authorization or personalization, validate the hash on your backend.
-- **Telegram bot token and chat ID.** The `TELEGRAM_BOT_TOKEN` and optional `TARGET_CHAT_ID` used for order notifications are stored as Supabase Edge Function secrets and are never included in the client bundle. Do not add them to `.env` or expose them in the frontend.
+- **Telegram initData.** Do not expose sensitive tokens or secrets in the frontend.
 
 ---
 

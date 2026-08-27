@@ -63,8 +63,7 @@ CREATE POLICY "Allow public delete product images" ON storage.objects
 
 -- Seed default categories
 INSERT INTO categories (name) VALUES
-  ('School Uniform'),
-  ('Stationery'),
+  ('Clothing'),
   ('Books'),
   ('Sports'),
   ('Electronics'),

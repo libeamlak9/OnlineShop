@@ -2,7 +2,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const CACHE_KEYS = {
   products: '@onlineshop_products',
-  orders: '@onlineshop_orders',
   categories: '@onlineshop_categories',
 } as const;
 

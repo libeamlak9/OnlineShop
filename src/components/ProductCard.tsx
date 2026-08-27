@@ -6,10 +6,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { Product } from '../types';
 import { getProductCoverImage } from '../utils/images';
-import { useApp } from '../context/AppContext';
 import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../constants/theme';
 
 interface ProductCardProps {
@@ -18,31 +16,9 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onPress }: ProductCardProps) {
-  const { cart, addToCart, updateCartQuantity } = useApp();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
   const imageUri = getProductCoverImage(product);
-
-  const coverIndex = product.coverImageIndex ?? 0;
-
-  const cartQuantity = cart
-    .filter((item) => item.product.id === product.id)
-    .reduce((sum, item) => sum + item.quantity, 0);
-
-  const coverItem = cart.find(
-    (item) =>
-      item.product.id === product.id && item.selectedImageIndex === coverIndex
-  );
-
-  function handleAdd() {
-    addToCart(product, coverIndex);
-  }
-
-  function handleDecrease() {
-    if (coverItem) {
-      updateCartQuantity(product.id, coverIndex, coverItem.quantity - 1);
-    }
-  }
 
   return (
     <TouchableOpacity
@@ -59,31 +35,6 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
         </Text>
         <View style={styles.footer}>
           <Text style={styles.price}>${product.price.toFixed(2)}</Text>
-          <View style={styles.actions}>
-            {cartQuantity > 0 && (
-              <TouchableOpacity
-                style={styles.qtyButton}
-                onPress={handleDecrease}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="remove" size={16} color={colors.primary} />
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={handleAdd}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add" size={18} color={colors.surface} />
-              {cartQuantity > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>
-                    {cartQuantity > 99 ? '99+' : cartQuantity}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -137,46 +88,5 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     fontSize: fontSizes.sm,
     fontWeight: '700',
     color: colors.price,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  qtyButton: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  addButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  badge: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: colors.price,
-    borderRadius: 9,
-    minWidth: 16,
-    height: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 3,
-  },
-  badgeText: {
-    color: colors.surface,
-    fontSize: 9,
-    fontWeight: '700',
   },
 });

@@ -6,8 +6,6 @@ import { isTelegram } from '../lib/telegram';
 import { UserTabNavigator } from './UserTabNavigator';
 import { AdminStackNavigator } from './AdminStackNavigator';
 import { ProductDetailScreen } from '../screens/user/ProductDetailScreen';
-
-import { OrderDetailScreen } from '../screens/user/OrderDetailScreen';
 import { AdminLoginScreen } from '../screens/AdminLoginScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -27,11 +25,6 @@ export function AppNavigator() {
               component={ProductDetailScreen}
               options={{ headerShown: !inTelegram, title: 'Product' }}
             />
-            <Stack.Screen
-              name="OrderDetail"
-              component={OrderDetailScreen}
-              options={{ headerShown: !inTelegram, title: 'Order Details' }}
-            />
           </>
         ) : (
           <>
@@ -40,12 +33,6 @@ export function AppNavigator() {
               name="ProductDetail"
               component={ProductDetailScreen}
               options={{ headerShown: !inTelegram, title: 'Product' }}
-            />
-
-            <Stack.Screen
-              name="OrderDetail"
-              component={OrderDetailScreen}
-              options={{ headerShown: !inTelegram, title: 'Order Details' }}
             />
             <Stack.Screen
               name="AdminLogin"

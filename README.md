@@ -1,24 +1,19 @@
 # Gold Fashion — Telegram Mini App
 
-A **Telegram Mini App** built with **Expo SDK 54** and **React Native** (rendered via `react-native-web`) for student online shopping. The same mobile-style UI runs inside Telegram on Android, iOS, desktop, and Web Telegram.
+A **Telegram Mini App** built with **Expo SDK 54** and **React Native** (rendered via `react-native-web`) for browsing a product catalog. The same mobile-style UI runs inside Telegram on Android, iOS, desktop, and Web Telegram.
 
 ## Features
 
-### Student
+### Shopper
 - Browse products in a responsive grid.
-- Search products by name or description.
+- Search products by name.
 - Filter products by category.
-- Add items to cart, adjust quantities, and remove items.
-- Checkout with delivery location and Ethiopian phone-number validation.
-- Choose between **Cash on Delivery** and **Simulated Online Payment**.
-- View order history and order details with item images.
+- Tap a product to view its gallery, price, and description.
 
 ### Admin
 - Add, edit, and delete products.
 - Upload multiple product images and choose the cover image displayed on the home page.
 - Manage custom categories (add/remove).
-- View orders grouped by customer phone number.
-- Review all orders for a single customer.
 
 ## Tech stack
 
@@ -90,7 +85,6 @@ npx tsc --noEmit
     ├── components/                 # Reusable UI components
     │   ├── AdminHeader.tsx         # Web-only admin navigation header
     │   ├── Button.tsx              # Primary / secondary / danger / outline buttons
-    │   ├── CartItemRow.tsx         # Cart line item with quantity controls
     │   ├── CategoryFilter.tsx      # Horizontal category chips + "More" dropdown
     │   ├── EmptyState.tsx          # Empty list placeholder with icon
     │   ├── ProductCard.tsx         # Product grid card
@@ -116,47 +110,38 @@ npx tsc --noEmit
     ├── navigation/
     │   ├── AppNavigator.tsx        # Root navigator; hides headers inside Telegram
     │   ├── AdminStackNavigator.tsx # Admin screens stack
-    │   └── UserTabNavigator.tsx    # Student bottom-tabs
+    │   └── UserTabNavigator.tsx    # Shopper bottom-tabs
     ├── screens/
     │   ├── admin/
     │   │   ├── AdminDashboardScreen.tsx
-    │   │   ├── AdminOrdersScreen.tsx
-    │   │   ├── AdminUserOrdersScreen.tsx
     │   │   └── AddEditItemScreen.tsx
     │   └── user/
     │       ├── HomeScreen.tsx
-    │       ├── ProductDetailScreen.tsx
-    │       ├── CartScreen.tsx
-    │       ├── CheckoutScreen.tsx
-    │       ├── OrdersScreen.tsx
-    │       └── OrderDetailScreen.tsx
+    │       └── ProductDetailScreen.tsx
     ├── services/
     │   ├── cache.ts                # AsyncStorage cache helpers
     │   ├── categories.ts           # Category CRUD + realtime
     │   ├── images.ts               # Supabase Storage upload/delete
-    │   ├── orders.ts               # Order CRUD + realtime
     │   └── products.ts             # Product CRUD + realtime
     ├── types/
     │   ├── index.ts                # Domain types
     │   └── navigation.ts           # React Navigation param lists
     └── utils/
         ├── images.ts               # Placeholder images + cover/gallery helpers
-        ├── storage.ts              # AsyncStorage read/write helpers
-        └── validation.ts           # Ethiopian phone number validation
+        └── storage.ts              # AsyncStorage read/write helpers
 ```
 
 ## Architecture notes
 
 - All shared state lives in `src/context/AppContext.tsx` and is persisted to AsyncStorage.
 - Products support multiple images; `coverImageIndex` controls which image is shown in lists.
-- Each cart line item becomes a separate `Order` entry sharing location and phone number.
 - The Telegram Mini Apps SDK is initialized in `src/lib/telegram.ts` and bound to CSS variables for theme and safe-area insets.
-- Inside Telegram, the app hides React Navigation headers and web-only headers; it uses Telegram's native **MainButton**, **BackButton**, and **Popup** instead.
+- Inside Telegram, the app hides React Navigation headers and web-only headers; it uses Telegram's native **BackButton** and **Popup** instead.
 - Outside Telegram, the app still runs as a normal web app for development and testing.
 
 ## Notes
 
-- **No real authentication for shoppers.** Orders are anonymous in this MVP.
+- **No shopper authentication.** The catalog is public in this MVP.
 - **Admin access** requires signing in through Supabase Auth with the credentials configured in `.env`.
-- **No real payment processing.** Online payment is simulated; card details are never transmitted or stored securely.
-- **Local storage only.** AsyncStorage data is stored unencrypted in the browser. Do not store real payment data, passwords, or sensitive PII in this app.
+- **No payment or checkout.** This app is a product viewer only.
+- **Local storage only.** AsyncStorage data is stored unencrypted in the browser. Do not store passwords or sensitive PII in this app.

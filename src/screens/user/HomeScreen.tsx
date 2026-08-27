@@ -26,7 +26,7 @@ type ListItem = Product | { id: string; filler: true };
 
 export function HomeScreen() {
   const navigation = useNavigation<Navigation>();
-  const { products, addToCart } = useApp();
+  const { products } = useApp();
   const { breakpoint, isDesktop } = useResponsive();
   const colors = useThemeColors();
   const styles = makeStyles(colors);
@@ -118,10 +118,6 @@ export function HomeScreen() {
           visible={viewerProductId !== null}
           product={products.find((p) => p.id === viewerProductId) ?? null}
           onClose={() => setViewerProductId(null)}
-          onAddToCart={(selectedImageIndex) => {
-            const product = products.find((p) => p.id === viewerProductId);
-            if (product) addToCart(product, selectedImageIndex);
-          }}
         />
       </Screen>
     </>

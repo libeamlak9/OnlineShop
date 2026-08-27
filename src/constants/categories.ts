@@ -1,8 +1,7 @@
 import { Category } from '../types';
 
 export const DEFAULT_CATEGORIES: Category[] = [
-  'School Uniform',
-  'Stationery',
+  'Clothing',
   'Books',
   'Sports',
   'Electronics',
@@ -10,8 +9,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
 ];
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  'School Uniform': '#4A90E2',
-  Stationery: '#F5A623',
+  Clothing: '#4A90E2',
   Books: '#7ED321',
   Sports: '#D0021B',
   Electronics: '#9013FE',

@@ -108,7 +108,7 @@ export function AdminLoginScreen() {
         />
         <Text style={styles.title}>Admin Access</Text>
         <Text style={styles.subtitle}>
-          Enter the admin password to manage products and orders.
+          Enter the admin password to manage products and categories.
         </Text>
 
         <View style={styles.inputContainer}>

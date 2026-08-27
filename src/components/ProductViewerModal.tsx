@@ -14,7 +14,6 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Button } from './Button';
 import { Product } from '../types';
 import { getProductGalleryImages } from '../utils/images';
 import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../constants/theme';
@@ -23,14 +22,12 @@ interface ProductViewerModalProps {
   visible: boolean;
   product: Product | null;
   onClose: () => void;
-  onAddToCart?: (selectedImageIndex: number) => void;
 }
 
 export function ProductViewerModal({
   visible,
   product,
   onClose,
-  onAddToCart,
 }: ProductViewerModalProps) {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
@@ -180,17 +177,6 @@ export function ProductViewerModal({
                   </Text>
                 )}
               </View>
-
-              {onAddToCart && (
-                <Button
-                  title="Add to Cart"
-                  onPress={() => {
-                    onAddToCart(activeIndex);
-                    onClose();
-                  }}
-                  style={styles.addToCartButton}
-                />
-              )}
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -351,8 +337,5 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.textSecondary,
     lineHeight: 22,
-  },
-  addToCartButton: {
-    marginTop: spacing.md,
   },
 });
