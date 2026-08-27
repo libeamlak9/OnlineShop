@@ -1,9 +1,3 @@
-import { NavigatorScreenParams } from '@react-navigation/native';
-
-export type UserTabParamList = {
-  Home: undefined;
-};
-
 export type AdminStackParamList = {
   AdminDashboard: undefined;
   AdminProducts: undefined;
@@ -11,8 +5,8 @@ export type AdminStackParamList = {
 };
 
 export type RootStackParamList = {
-  UserTabs: NavigatorScreenParams<UserTabParamList>;
-  AdminStack: NavigatorScreenParams<AdminStackParamList>;
+  Home: undefined;
+  AdminStack: undefined;
   AdminLogin: undefined;
   ProductDetail: { productId: string };
 };

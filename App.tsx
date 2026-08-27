@@ -1,16 +1,30 @@
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
-import { AppProvider } from './src/context/AppContext';
+import { AppProvider, useApp } from './src/context/AppContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { initTelegram } from './src/lib/telegram';
 import { isSupabaseConfigured } from './src/lib/supabase';
-import { colors, fontSizes, spacing } from './src/constants/theme';
+import { colors, darkColors, fontSizes, spacing, useThemeColors } from './src/constants/theme';
 
 function TelegramInitializer() {
   useEffect(() => {
     return initTelegram();
   }, []);
+  return null;
+}
+
+function ThemeBodySync() {
+  const { theme } = useApp();
+  const themeColors = useThemeColors();
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      document.body.style.backgroundColor = themeColors.background;
+    }
+  }, [theme, themeColors]);
+
   return null;
 }
 
@@ -34,6 +48,7 @@ export default function App() {
   return (
     <AppProvider>
       <TelegramInitializer />
+      <ThemeBodySync />
       <AppNavigator />
       <StatusBar style="auto" />
     </AppProvider>

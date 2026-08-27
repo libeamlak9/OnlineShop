@@ -3,8 +3,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { useApp } from '../context/AppContext';
 import { isTelegram } from '../lib/telegram';
-import { UserTabNavigator } from './UserTabNavigator';
 import { AdminStackNavigator } from './AdminStackNavigator';
+import { HomeScreen } from '../screens/user/HomeScreen';
 import { ProductDetailScreen } from '../screens/user/ProductDetailScreen';
 import { AdminLoginScreen } from '../screens/AdminLoginScreen';
 
@@ -28,7 +28,7 @@ export function AppNavigator() {
           </>
         ) : (
           <>
-            <Stack.Screen name="UserTabs" component={UserTabNavigator} />
+            <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen
               name="ProductDetail"
               component={ProductDetailScreen}

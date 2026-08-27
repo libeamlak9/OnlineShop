@@ -29,7 +29,7 @@ export function WebHeader({
       <View style={styles.inner}>
         <TouchableOpacity
           style={styles.brand}
-          onPress={() => navigation.navigate('UserTabs', { screen: 'Home' })}
+          onPress={() => navigation.navigate('Home')}
         >
           <Image
             source={require('../../assets/logo.png')}
