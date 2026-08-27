@@ -31,6 +31,7 @@ import { deleteProductImages } from '../services/images';
 const initialState: AppState = {
   role: 'user',
   theme: 'light',
+  isThemeSetByUser: false,
   products: [],
   categories: [],
 };
@@ -41,7 +42,7 @@ function reducer(state: AppState, action: AppAction): AppState {
       return { ...state, role: action.payload };
 
     case 'SET_THEME':
-      return { ...state, theme: action.payload };
+      return { ...state, theme: action.payload, isThemeSetByUser: true };
 
     case 'SET_PRODUCTS':
       return { ...state, products: action.payload };

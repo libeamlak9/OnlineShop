@@ -66,10 +66,12 @@ function telegramColors(params: ThemeParamsType): ColorPalette | undefined {
 }
 
 export function useThemeColors(): ColorPalette {
-  const { theme } = useApp();
+  const { theme, isThemeSetByUser } = useApp();
   const { isInTelegram, themeParams } = useTelegram();
 
-  if (isInTelegram && themeParams) {
+  // Respect the user's explicit theme choice. Only fall back to Telegram's
+  // theme when running inside Telegram and the user has not manually set one.
+  if (!isThemeSetByUser && isInTelegram && themeParams) {
     const tg = telegramColors(themeParams);
     if (tg) return tg;
   }

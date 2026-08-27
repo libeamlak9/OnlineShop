@@ -18,6 +18,7 @@ export interface Product {
 export interface AppState {
   role: Role;
   theme: Theme;
+  isThemeSetByUser: boolean;
   products: Product[];
   categories: Category[];
 }
