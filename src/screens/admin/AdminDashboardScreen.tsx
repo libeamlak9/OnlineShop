@@ -3,7 +3,6 @@ import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-  FlatList,
   Image,
   StyleSheet,
   Text,
@@ -158,22 +157,39 @@ export function AdminDashboardScreen() {
                     <Text style={[styles.tableHeaderText, styles.colActions]}>Actions</Text>
                   </View>
                 )}
-                <FlatList
-                  data={products}
-                  keyExtractor={(item) => item.id}
-                  scrollEnabled={false}
-                  renderItem={({ item }) => (
-                    <View style={[styles.productRow, isDesktop && styles.productRowDesktop]}>
-                      <TouchableOpacity
-                        style={[
-                          styles.productInfoTouchable,
-                          isDesktop && styles.productInfoTouchableDesktop,
-                        ]}
-                        onPress={() => navigation.navigate('AddEditItem', { productId: item.id })}
-                        activeOpacity={0.7}
-                      >
-                        {!isDesktop && (
-                          <View style={styles.mobileContent}>
+                {products.map((item) => (
+                  <View key={item.id} style={[styles.productRow, isDesktop && styles.productRowDesktop]}>
+                    <TouchableOpacity
+                      style={[
+                        styles.productInfoTouchable,
+                        isDesktop && styles.productInfoTouchableDesktop,
+                      ]}
+                      onPress={() => navigation.navigate('AddEditItem', { productId: item.id })}
+                      activeOpacity={0.7}
+                    >
+                      {!isDesktop && (
+                        <View style={styles.mobileContent}>
+                          <View style={styles.thumbnail}>
+                            <Image
+                              source={{ uri: getProductCoverImage(item) }}
+                              style={styles.thumbnailImage}
+                              resizeMode="contain"
+                            />
+                          </View>
+                          <View style={styles.mobileText}>
+                            <Text style={styles.productName} numberOfLines={1}>
+                              {item.name}
+                            </Text>
+                            <Text style={styles.productMeta}>
+                              {item.category} · <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+
+                      {isDesktop && (
+                        <>
+                          <View style={[styles.productCell, styles.colProduct, styles.productMain]}>
                             <View style={styles.thumbnail}>
                               <Image
                                 source={{ uri: getProductCoverImage(item) }}
@@ -181,52 +197,30 @@ export function AdminDashboardScreen() {
                                 resizeMode="contain"
                               />
                             </View>
-                            <View style={styles.mobileText}>
-                              <Text style={styles.productName} numberOfLines={1}>
-                                {item.name}
-                              </Text>
-                              <Text style={styles.productMeta}>
-                                {item.category} · <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
-                              </Text>
-                            </View>
+                            <Text style={styles.productName} numberOfLines={1}>
+                              {item.name}
+                            </Text>
                           </View>
-                        )}
+                          <Text style={[styles.productCellText, styles.colCategory]}>
+                            {item.category}
+                          </Text>
+                          <Text style={[styles.productCellText, styles.colPrice]}>
+                            ${item.price.toFixed(2)}
+                          </Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
 
-                        {isDesktop && (
-                          <>
-                            <View style={[styles.productCell, styles.colProduct, styles.productMain]}>
-                              <View style={styles.thumbnail}>
-                                <Image
-                                  source={{ uri: getProductCoverImage(item) }}
-                                  style={styles.thumbnailImage}
-                                  resizeMode="contain"
-                                />
-                              </View>
-                              <Text style={styles.productName} numberOfLines={1}>
-                                {item.name}
-                              </Text>
-                            </View>
-                            <Text style={[styles.productCellText, styles.colCategory]}>
-                              {item.category}
-                            </Text>
-                            <Text style={[styles.productCellText, styles.colPrice]}>
-                              ${item.price.toFixed(2)}
-                            </Text>
-                          </>
-                        )}
+                    <View style={[styles.productActions, isDesktop && styles.colActions]}>
+                      <TouchableOpacity
+                        style={[styles.iconButton, styles.deleteButton]}
+                        onPress={() => handleDelete(item.id)}
+                      >
+                        <Ionicons name="trash-outline" size={18} color={colors.danger} />
                       </TouchableOpacity>
-
-                      <View style={[styles.productActions, isDesktop && styles.colActions]}>
-                        <TouchableOpacity
-                          style={[styles.iconButton, styles.deleteButton]}
-                          onPress={() => handleDelete(item.id)}
-                        >
-                          <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                        </TouchableOpacity>
-                      </View>
                     </View>
-                  )}
-                />
+                  </View>
+                ))}
               </>
             )}
           </View>
