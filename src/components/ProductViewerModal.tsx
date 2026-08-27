@@ -168,7 +168,18 @@ export function ProductViewerModal({
                 <Text style={styles.name} numberOfLines={2}>
                   {product.name}
                 </Text>
-                <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+                <View style={styles.priceColumn}>
+                  <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+                  <DownloadButton
+                    onPress={() =>
+                      product &&
+                      downloadImage(
+                        galleryImages[activeIndex],
+                        getImageFilename(product.name, activeIndex)
+                      )
+                    }
+                  />
+                </View>
               </View>
 
               <View style={styles.metaRow}>
@@ -184,15 +195,6 @@ export function ProductViewerModal({
         </TouchableWithoutFeedback>
 
         <View style={styles.topActions}>
-          <DownloadButton
-            onPress={() =>
-              product &&
-              downloadImage(
-                galleryImages[activeIndex],
-                getImageFilename(product.name, activeIndex)
-              )
-            }
-          />
           <TouchableOpacity
             style={styles.closeButton}
             onPress={onClose}
@@ -332,6 +334,10 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     fontSize: fontSizes.xl,
     fontWeight: '800',
     color: colors.price,
+  },
+  priceColumn: {
+    alignItems: 'flex-end',
+    gap: spacing.sm,
   },
   metaRow: {
     flexDirection: 'row',

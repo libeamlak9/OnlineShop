@@ -17,22 +17,19 @@ export function getImageFilename(productName: string, index: number): string {
 }
 
 async function downloadWeb(url: string, filename: string): Promise<void> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch image: ${response.status}`);
-  }
-  const blob = await response.blob();
-  const objectUrl = URL.createObjectURL(blob);
-
+  // Cross-origin images (Supabase Storage, placehold.co, etc.) usually block
+  // client-side fetch/CORS blob downloads. Use a plain anchor so the browser
+  // can handle the URL directly: same-origin downloads save automatically;
+  // cross-origin URLs open in a new tab where the user can save them.
   const link = document.createElement('a');
-  link.href = objectUrl;
+  link.href = url;
   link.download = filename;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.style.display = 'none';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-
-  // Delay revoking to give the browser time to start the download.
-  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 }
 
 async function downloadNative(url: string, filename: string): Promise<void> {

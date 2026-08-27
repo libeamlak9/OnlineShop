@@ -68,7 +68,17 @@ export function ProductDetailScreen() {
         <Text style={styles.name} numberOfLines={2}>
           {product.name}
         </Text>
-        <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+        <View style={styles.priceColumn}>
+          <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+          <DownloadButton
+            onPress={() =>
+              downloadImage(
+                galleryImages[activeIndex],
+                getImageFilename(product.name, activeIndex)
+              )
+            }
+          />
+        </View>
       </View>
 
       <View style={styles.metaRow}>
@@ -105,16 +115,6 @@ export function ProductDetailScreen() {
                   style={styles.desktopImage}
                   resizeMode="contain"
                 />
-                <View style={styles.downloadButtonContainer}>
-                  <DownloadButton
-                    onPress={() =>
-                      downloadImage(
-                        galleryImages[activeIndex],
-                        getImageFilename(product.name, activeIndex)
-                      )
-                    }
-                  />
-                </View>
               </View>
               {galleryImages.length > 1 && (
                 <View style={styles.thumbnailRow}>
@@ -167,16 +167,6 @@ export function ProductDetailScreen() {
           index,
         })}
       />
-      <View style={styles.downloadButtonContainer}>
-        <DownloadButton
-          onPress={() =>
-            downloadImage(
-              galleryImages[activeIndex],
-              getImageFilename(product.name, activeIndex)
-            )
-          }
-        />
-      </View>
       {galleryImages.length > 1 && (
         <View style={styles.dots}>
           {galleryImages.map((_, index) => (
@@ -223,12 +213,6 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     borderRadius: borderRadius.md,
     overflow: 'hidden',
     position: 'relative',
-  },
-  downloadButtonContainer: {
-    position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
-    zIndex: 10,
   },
   desktopImage: {
     width: '100%',
@@ -321,6 +305,10 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     fontSize: fontSizes.xxl,
     fontWeight: '700',
     color: colors.price,
+  },
+  priceColumn: {
+    alignItems: 'flex-end',
+    gap: spacing.sm,
   },
   metaRow: {
     flexDirection: 'row',
