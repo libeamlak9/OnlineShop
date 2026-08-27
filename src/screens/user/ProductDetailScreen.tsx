@@ -14,12 +14,15 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components/Screen';
 import { EmptyState } from '../../components/EmptyState';
 import { useApp } from '../../context/AppContext';
 import { useResponsive } from '../../hooks/useResponsive';
 import { useTelegramBackButton } from '../../hooks/useTelegramBackButton';
 import { getProductGalleryImages } from '../../utils/images';
+import { DownloadButton } from '../../components/DownloadButton';
+import { downloadImage, getImageFilename } from '../../utils/download';
 import { RootStackParamList } from '../../types/navigation';
 import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../../constants/theme';
 
@@ -102,6 +105,16 @@ export function ProductDetailScreen() {
                   style={styles.desktopImage}
                   resizeMode="contain"
                 />
+                <View style={styles.downloadButtonContainer}>
+                  <DownloadButton
+                    onPress={() =>
+                      downloadImage(
+                        galleryImages[activeIndex],
+                        getImageFilename(product.name, activeIndex)
+                      )
+                    }
+                  />
+                </View>
               </View>
               {galleryImages.length > 1 && (
                 <View style={styles.thumbnailRow}>
@@ -154,6 +167,16 @@ export function ProductDetailScreen() {
           index,
         })}
       />
+      <View style={styles.downloadButtonContainer}>
+        <DownloadButton
+          onPress={() =>
+            downloadImage(
+              galleryImages[activeIndex],
+              getImageFilename(product.name, activeIndex)
+            )
+          }
+        />
+      </View>
       {galleryImages.length > 1 && (
         <View style={styles.dots}>
           {galleryImages.map((_, index) => (
@@ -199,6 +222,13 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     overflow: 'hidden',
+    position: 'relative',
+  },
+  downloadButtonContainer: {
+    position: 'absolute',
+    top: spacing.md,
+    right: spacing.md,
+    zIndex: 10,
   },
   desktopImage: {
     width: '100%',
@@ -236,6 +266,7 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     width: '100%',
     backgroundColor: colors.surface,
     marginBottom: spacing.lg,
+    position: 'relative',
   },
   imageSlide: {
     justifyContent: 'center',

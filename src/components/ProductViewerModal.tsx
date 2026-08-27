@@ -14,8 +14,10 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { DownloadButton } from './DownloadButton';
 import { Product } from '../types';
 import { getProductGalleryImages } from '../utils/images';
+import { downloadImage, getImageFilename } from '../utils/download';
 import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../constants/theme';
 
 interface ProductViewerModalProps {
@@ -181,13 +183,24 @@ export function ProductViewerModal({
           </View>
         </TouchableWithoutFeedback>
 
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={onClose}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="close" size={24} color={colors.surface} />
-        </TouchableOpacity>
+        <View style={styles.topActions}>
+          <DownloadButton
+            onPress={() =>
+              product &&
+              downloadImage(
+                galleryImages[activeIndex],
+                getImageFilename(product.name, activeIndex)
+              )
+            }
+          />
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={onClose}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close" size={24} color={colors.surface} />
+          </TouchableOpacity>
+        </View>
       </View>
     </Modal>
   );
@@ -202,11 +215,16 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.92)',
   },
-  closeButton: {
+  topActions: {
     position: 'absolute',
     top: spacing.xl + 8,
     right: spacing.lg,
     zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  closeButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
