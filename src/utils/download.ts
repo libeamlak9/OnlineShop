@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
-import { showAlert } from '../lib/telegram';
+import { downloadTelegramFile, isTelegram, showAlert } from '../lib/telegram';
 
 function sanitizeFilename(name: string): string {
   return name
@@ -48,7 +48,9 @@ async function downloadNative(url: string, filename: string): Promise<void> {
 
 export async function downloadImage(url: string, filename: string): Promise<void> {
   try {
-    if (Platform.OS === 'web') {
+    if (isTelegram()) {
+      await downloadTelegramFile(url, filename);
+    } else if (Platform.OS === 'web') {
       await downloadWeb(url, filename);
     } else {
       await downloadNative(url, filename);

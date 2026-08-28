@@ -1,6 +1,7 @@
 import { Linking } from 'react-native';
 import {
   backButton,
+  downloadFile,
   hapticFeedback,
   init,
   initData,
@@ -292,6 +293,25 @@ export async function showConfirm(
   }
 
   return null;
+}
+
+
+/**
+ * Displays Telegram's native download prompt for a file URL.
+ * Falls back to an error when not running inside Telegram.
+ */
+export async function downloadTelegramFile(url: string, filename: string): Promise<void> {
+  if (!isTelegram()) {
+    throw new Error('Telegram download is only available inside Telegram.');
+  }
+
+  try {
+    // downloadFile returns a wrapped TaskEither; awaiting it resolves when
+    // the download prompt is accepted or rejects on failure.
+    await downloadFile(url, filename);
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('Telegram download failed.');
+  }
 }
 
 /** Opens a Telegram user/channel chat. Inside Telegram this closes the Mini App and opens the chat natively. */
