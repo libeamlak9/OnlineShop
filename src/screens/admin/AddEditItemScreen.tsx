@@ -27,7 +27,7 @@ import { AdminStackParamList } from '../../types/navigation';
 import { getProductCoverImage, resizeImage } from '../../utils/images';
 import { deleteProductImage, uploadProductImages } from '../../services/images';
 import { Category, Product } from '../../types';
-import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../../constants/theme';
+import { useThemeColors, spacing, borderRadius, fontSizes, webInputReset, ColorPalette } from '../../constants/theme';
 
 const MAX_WIDTH = 800;
 
@@ -238,7 +238,7 @@ export function AddEditItemScreen() {
                 <Picker
                   selectedValue={category}
                   onValueChange={(itemValue) => setCategory(itemValue as Category)}
-                  style={{ color: colors.text }}
+                  style={{ color: colors.text, ...webInputReset }}
                   itemStyle={{ color: colors.text }}
                   dropdownIconColor={colors.text}
                 >
@@ -402,6 +402,8 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     borderRadius: 12,
   },
   input: {
+    // Keep the styled border; only strip the web focus outline/inner box.
+    ...webInputReset,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -423,6 +425,9 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     borderColor: colors.border,
     borderRadius: borderRadius.sm,
     overflow: 'hidden',
+    paddingHorizontal: spacing.sm,
+    minHeight: 48,
+    justifyContent: 'center',
   },
   saveButton: {
     marginTop: spacing.md,

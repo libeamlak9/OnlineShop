@@ -1,7 +1,7 @@
 import { StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useResponsive } from '../hooks/useResponsive';
-import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../constants/theme';
+import { useThemeColors, spacing, borderRadius, fontSizes, webInputReset, ColorPalette } from '../constants/theme';
 
 interface SearchBarProps {
   value: string;
@@ -51,22 +51,25 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: borderRadius.sm,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: spacing.sm,
+    minHeight: 40,
     borderWidth: 1,
     borderColor: colors.border,
     gap: spacing.xs,
   },
   containerCompact: {
     paddingHorizontal: spacing.xs,
-    paddingVertical: 1,
+    paddingVertical: spacing.xs,
+    minHeight: 36,
     gap: 2,
   },
   input: {
     flex: 1,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.md,
     color: colors.text,
+    ...webInputReset,
   },
   inputCompact: {
-    fontSize: fontSizes.xs,
+    fontSize: fontSizes.sm,
   },
 });

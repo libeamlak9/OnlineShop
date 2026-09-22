@@ -18,7 +18,7 @@ import { getAdminEmail } from '../constants/admin';
 import { useTelegramBackButton } from '../hooks/useTelegramBackButton';
 import { showAlert } from '../lib/telegram';
 import { RootStackParamList } from '../types/navigation';
-import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../constants/theme';
+import { useThemeColors, spacing, borderRadius, fontSizes, webInputReset, ColorPalette } from '../constants/theme';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -195,6 +195,7 @@ const makeStyles = (colors: ColorPalette) =>
       paddingVertical: spacing.md,
       fontSize: fontSizes.md,
       color: colors.text,
+      ...webInputReset,
     },
     eyeButton: {
       padding: spacing.sm,

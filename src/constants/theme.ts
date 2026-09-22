@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { useTelegram } from '../hooks/useTelegram';
 import type { ThemeParams as ThemeParamsType } from '@tma.js/types';
@@ -109,3 +110,15 @@ export const breakpoints = {
   md: 768,
   lg: 1024,
 };
+
+// Web-only: strip the browser's default focus outline and inner border that
+// react-native-web inputs/selects render on top of our styled boxes.
+export const webInputReset =
+  Platform.OS === 'web'
+    ? ({
+        outlineStyle: 'none',
+        outline: 'none',
+        borderWidth: 0,
+        backgroundColor: 'transparent',
+      } as any)
+    : {};

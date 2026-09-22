@@ -21,7 +21,7 @@ import { useResponsive } from '../../hooks/useResponsive';
 import { showAlert } from '../../lib/telegram';
 import { AdminStackParamList } from '../../types/navigation';
 import { getProductCoverImage } from '../../utils/images';
-import { useThemeColors, spacing, borderRadius, fontSizes, ColorPalette } from '../../constants/theme';
+import { useThemeColors, spacing, borderRadius, fontSizes, webInputReset, ColorPalette } from '../../constants/theme';
 
 const MAX_WIDTH = 1200;
 
@@ -336,6 +336,8 @@ const makeStyles = (colors: ColorPalette) =>
     },
     categoryInput: {
       flex: 1,
+      // Keep the styled border; only strip the web focus outline/inner box.
+      ...webInputReset,
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
