@@ -17,10 +17,31 @@ export function getImageFilename(productName: string, index: number): string {
 }
 
 async function downloadWeb(url: string, filename: string): Promise<void> {
-  // Cross-origin images (Supabase Storage, placehold.co, etc.) usually block
-  // client-side fetch/CORS blob downloads. Use a plain anchor so the browser
-  // can handle the URL directly: same-origin downloads save automatically;
-  // cross-origin URLs open in a new tab where the user can save them.
+  // Fetch the image as a blob and save it via a same-origin object URL so the
+  // browser downloads immediately with the given filename — no save-as prompt,
+  // no new tab. Supabase Storage public URLs allow cross-origin fetches.
+  const response = await fetch(url, { mode: 'cors' });
+  if (!response.ok) {
+    throw new Error(`Download failed with status ${response.status}`);
+  }
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
+  }
+}
+
+function downloadWebFallback(url: string, filename: string): void {
+  // Last resort when the blob fetch fails (e.g. CORS): a plain anchor. The
+  // cross-origin URL ignores the download attribute and opens in a new tab.
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
@@ -48,10 +69,18 @@ async function downloadNative(url: string, filename: string): Promise<void> {
 
 export async function downloadImage(url: string, filename: string): Promise<void> {
   try {
-    if (isTelegram()) {
-      await downloadTelegramFile(url, filename);
-    } else if (Platform.OS === 'web') {
-      await downloadWeb(url, filename);
+    if (Platform.OS === 'web') {
+      // The Telegram webview is a browser, so the instant blob download works
+      // there too. Only fall back to slower paths when the fetch itself fails.
+      try {
+        await downloadWeb(url, filename);
+      } catch {
+        if (isTelegram()) {
+          await downloadTelegramFile(url, filename);
+        } else {
+          downloadWebFallback(url, filename);
+        }
+      }
     } else {
       await downloadNative(url, filename);
     }

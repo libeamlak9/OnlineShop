@@ -1,24 +1,46 @@
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors, ColorPalette } from '../constants/theme';
 
 interface DownloadButtonProps {
-  onPress: () => void;
+  onPress: () => unknown;
   size?: number;
 }
 
 export function DownloadButton({ onPress, size = 20 }: DownloadButtonProps) {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
+  const [pending, setPending] = useState(false);
+
+  async function handlePress() {
+    if (pending) return;
+    const result = onPress();
+    if (result instanceof Promise) {
+      setPending(true);
+      try {
+        await result;
+      } catch {
+        // The download helper already surfaces failures via alert.
+      } finally {
+        setPending(false);
+      }
+    }
+  }
 
   return (
     <TouchableOpacity
       style={styles.button}
-      onPress={onPress}
+      onPress={handlePress}
+      disabled={pending}
       activeOpacity={0.7}
       accessibilityLabel="Download image"
     >
-      <Ionicons name="download-outline" size={size} color={colors.surface} />
+      {pending ? (
+        <ActivityIndicator size="small" color={colors.surface} />
+      ) : (
+        <Ionicons name="download-outline" size={size} color={colors.surface} />
+      )}
     </TouchableOpacity>
   );
 }
