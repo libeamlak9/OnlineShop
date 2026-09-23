@@ -69,17 +69,21 @@ async function downloadNative(url: string, filename: string): Promise<void> {
 
 export async function downloadImage(url: string, filename: string): Promise<void> {
   try {
-    if (Platform.OS === 'web') {
-      // The Telegram webview is a browser, so the instant blob download works
-      // there too. Only fall back to slower paths when the fetch itself fails.
+    if (isTelegram()) {
+      // Telegram's mobile webview silently ignores programmatic blob downloads
+      // (no error is thrown, so a blob-first approach does nothing at all).
+      // The native downloader is the only reliable path inside Telegram.
+      try {
+        await downloadTelegramFile(url, filename);
+      } catch {
+        // Older clients may not support native download; try the blob path.
+        await downloadWeb(url, filename);
+      }
+    } else if (Platform.OS === 'web') {
       try {
         await downloadWeb(url, filename);
       } catch {
-        if (isTelegram()) {
-          await downloadTelegramFile(url, filename);
-        } else {
-          downloadWebFallback(url, filename);
-        }
+        downloadWebFallback(url, filename);
       }
     } else {
       await downloadNative(url, filename);
