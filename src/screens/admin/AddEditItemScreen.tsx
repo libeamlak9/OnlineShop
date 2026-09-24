@@ -231,7 +231,7 @@ export function AddEditItemScreen() {
           </View>
 
           <View style={[styles.row, isDesktop && styles.rowDesktop]}>
-            <View style={[styles.field, styles.flex]}>
+            <View style={[styles.field, isDesktop && styles.flex]}>
               <Text style={styles.label}>Name</Text>
               <TextInput
                 style={styles.input}
@@ -241,7 +241,7 @@ export function AddEditItemScreen() {
               />
             </View>
 
-            <View style={[styles.field, styles.flex]}>
+            <View style={[styles.field, isDesktop && styles.flex]}>
               <Text style={styles.label}>Categories</Text>
               <View style={styles.chipRow}>
                 {categories.map((cat) => {
@@ -263,7 +263,7 @@ export function AddEditItemScreen() {
           </View>
 
           <View style={[styles.row, isDesktop && styles.rowDesktop]}>
-            <View style={[styles.field, styles.flex]}>
+            <View style={[styles.field, isDesktop && styles.flex]}>
               <Text style={styles.label}>Price ($)</Text>
               <TextInput
                 style={styles.input}
