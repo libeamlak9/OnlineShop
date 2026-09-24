@@ -62,7 +62,7 @@ export function AdminDashboardScreen() {
   }
 
   async function handleRemoveCategory(category: string) {
-    const inUse = products.some((p) => p.category === category);
+    const inUse = products.some((p) => p.categories.includes(category));
     if (inUse) {
       await showAlert(
         'Cannot delete',
@@ -180,8 +180,13 @@ export function AdminDashboardScreen() {
                             <Text style={styles.productName} numberOfLines={1}>
                               {item.name}
                             </Text>
+                            {item.isDraft && (
+                              <View style={styles.draftBadge}>
+                                <Text style={styles.draftBadgeText}>Draft</Text>
+                              </View>
+                            )}
                             <Text style={styles.productMeta}>
-                              {item.category} · <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+                              {item.categories.join(', ')} · <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
                             </Text>
                           </View>
                         </View>
@@ -200,9 +205,14 @@ export function AdminDashboardScreen() {
                             <Text style={styles.productName} numberOfLines={1}>
                               {item.name}
                             </Text>
+                            {item.isDraft && (
+                              <View style={styles.draftBadge}>
+                                <Text style={styles.draftBadgeText}>Draft</Text>
+                              </View>
+                            )}
                           </View>
                           <Text style={[styles.productCellText, styles.colCategory]}>
-                            {item.category}
+                            {item.categories.join(', ')}
                           </Text>
                           <Text style={[styles.productCellText, styles.colPrice]}>
                             ${item.price.toFixed(2)}
@@ -425,6 +435,19 @@ const makeStyles = (colors: ColorPalette) =>
       fontWeight: '600',
       color: colors.text,
       flex: 1,
+    },
+    draftBadge: {
+      backgroundColor: colors.warning,
+      borderRadius: borderRadius.sm,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 2,
+      alignSelf: 'flex-start',
+      marginLeft: spacing.xs,
+    },
+    draftBadgeText: {
+      fontSize: fontSizes.xs,
+      fontWeight: '600',
+      color: colors.surface,
     },
     productMeta: {
       fontSize: fontSizes.xs,

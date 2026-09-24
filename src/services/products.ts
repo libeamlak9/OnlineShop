@@ -7,10 +7,13 @@ interface DbProduct {
   name: string;
   description: string;
   price: number;
-  category: string;
+  categories: string[];
   images: string[];
   cover_image_index: number;
   created_at: string;
+  telegram_message_ids?: number[] | null;
+  telegram_primary_message_id?: number | null;
+  is_draft?: boolean;
 }
 
 function toProduct(db: DbProduct): Product {
@@ -19,10 +22,13 @@ function toProduct(db: DbProduct): Product {
     name: db.name,
     description: db.description,
     price: db.price,
-    category: db.category,
+    categories: db.categories ?? [],
     images: db.images,
     coverImageIndex: db.cover_image_index,
     createdAt: db.created_at,
+    telegramMessageIds: db.telegram_message_ids ?? undefined,
+    telegramPrimaryMessageId: db.telegram_primary_message_id ?? undefined,
+    isDraft: db.is_draft ?? false,
   };
 }
 
@@ -32,10 +38,13 @@ function toDbProduct(product: Product): DbProduct {
     name: product.name,
     description: product.description,
     price: product.price,
-    category: product.category,
+    categories: product.categories,
     images: product.images,
     cover_image_index: product.coverImageIndex,
     created_at: product.createdAt,
+    telegram_message_ids: product.telegramMessageIds ?? null,
+    telegram_primary_message_id: product.telegramPrimaryMessageId ?? null,
+    is_draft: product.isDraft ?? false,
   };
 }
 

@@ -45,8 +45,9 @@ export function HomeScreen() {
 
   const filtered = useMemo(() => {
     return products.filter((product) => {
+      if (product.isDraft) return false; // drafts are admin-only
       const matchesCategory = selectedCategory
-        ? product.category === selectedCategory
+        ? product.categories.includes(selectedCategory)
         : true;
       const matchesSearch =
         query.trim() === '' ||

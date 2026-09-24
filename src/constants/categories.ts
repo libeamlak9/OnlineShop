@@ -1,11 +1,22 @@
 import { Category } from '../types';
 
 export const DEFAULT_CATEGORIES: Category[] = [
-  'Clothing',
-  'Books',
-  'Sports',
-  'Electronics',
+  'Ladies',
+  'Men',
+  'Kids',
+  'Dresses',
+  'Sets',
+  'Tops',
+  'Pants',
+  'Skirts',
+  'Jackets & Coats',
+  'Shoes',
+  'Bags',
   'Accessories',
+  'Perfume & Beauty',
+  'Home & Kitchen',
+  'Electronics',
+  'Shapewear & Underwear',
 ];
 
 export const CATEGORY_COLORS: Record<string, string> = {

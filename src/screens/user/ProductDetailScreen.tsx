@@ -82,7 +82,7 @@ export function ProductDetailScreen() {
       </View>
 
       <View style={styles.metaRow}>
-        <Text style={styles.category}>{product.category}</Text>
+        <Text style={styles.category}>{product.categories.join(', ')}</Text>
       </View>
 
       <View style={styles.divider} />

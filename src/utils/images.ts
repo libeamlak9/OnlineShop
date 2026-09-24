@@ -17,14 +17,14 @@ export function getProductImage(category: Category, name: string, image?: string
 
 export function getProductCoverImage(product: Product): string {
   const image = product.images[product.coverImageIndex ?? 0];
-  return getProductImage(product.category, product.name, image);
+  return getProductImage(product.categories[0] ?? '', product.name, image);
 }
 
 export function getProductGalleryImages(product: Product): string[] {
   if (product.images.length > 0) {
     return product.images;
   }
-  return [generatePlaceholderImage(product.category, product.name.charAt(0))];
+  return [generatePlaceholderImage(product.categories[0] ?? '', product.name.charAt(0))];
 }
 
 export async function resizeImage(uri: string, maxWidth = 800): Promise<string> {

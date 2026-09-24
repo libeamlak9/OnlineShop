@@ -9,10 +9,16 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  category: Category;
+  categories: Category[];
   images: string[];
   coverImageIndex: number;
   createdAt: string;
+  /** Telegram message IDs of the channel posts this product was imported from. */
+  telegramMessageIds?: number[];
+  /** The captioned Telegram message that anchors the product group. */
+  telegramPrimaryMessageId?: number;
+  /** Drafts are hidden from shoppers; saving in the admin panel publishes them. */
+  isDraft?: boolean;
 }
 
 export interface AppState {

@@ -183,7 +183,7 @@ export function ProductViewerModal({
               </View>
 
               <View style={styles.metaRow}>
-                <Text style={styles.category}>{product.category}</Text>
+                <Text style={styles.category}>{product.categories.join(', ')}</Text>
                 {galleryImages.length > 1 && (
                   <Text style={styles.counter}>
                     {activeIndex + 1} / {galleryImages.length}

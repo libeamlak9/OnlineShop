@@ -13,7 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '../../components/Screen';
 import { Button } from '../../components/Button';
@@ -46,7 +45,7 @@ export function AddEditItemScreen() {
 
   const [name, setName] = useState(existing?.name ?? '');
   const [price, setPrice] = useState(existing?.price.toString() ?? '');
-  const [category, setCategory] = useState<Category>(existing?.category ?? categories[0] ?? '');
+  const [selectedCategories, setSelectedCategories] = useState<Category[]>(existing?.categories ?? []);
   const [images, setImages] = useState<string[]>(existing?.images ?? []);
   const [coverImageIndex, setCoverImageIndex] = useState(existing?.coverImageIndex ?? 0);
 
@@ -64,7 +63,13 @@ export function AddEditItemScreen() {
     name.trim() &&
     !isNaN(Number(price)) &&
     Number(price) > 0 &&
-    category.trim().length > 0;
+    selectedCategories.length > 0;
+
+  function toggleCategory(cat: Category) {
+    setSelectedCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
+  }
 
   async function pickImages() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -111,10 +116,14 @@ export function AddEditItemScreen() {
       name: name.trim(),
       description: existing?.description ?? '',
       price: Number(price),
-      category,
+      categories: selectedCategories,
       images,
       coverImageIndex: images.length > 0 ? coverImageIndex : 0,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
+      telegramMessageIds: existing?.telegramMessageIds,
+      telegramPrimaryMessageId: existing?.telegramPrimaryMessageId,
+      // Saving from the admin panel publishes drafts.
+      isDraft: false,
     };
 
     try {
@@ -136,7 +145,7 @@ export function AddEditItemScreen() {
     name: name.trim() || 'Product',
     description: existing?.description ?? '',
     price: Number(price) || 0,
-    category,
+    categories: selectedCategories,
     images,
     coverImageIndex,
     createdAt: existing?.createdAt ?? new Date().toISOString(),
@@ -233,19 +242,22 @@ export function AddEditItemScreen() {
             </View>
 
             <View style={[styles.field, styles.flex]}>
-              <Text style={styles.label}>Category</Text>
-              <View style={styles.picker}>
-                <Picker
-                  selectedValue={category}
-                  onValueChange={(itemValue) => setCategory(itemValue as Category)}
-                  style={{ color: colors.text, ...webInputReset }}
-                  itemStyle={{ color: colors.text }}
-                  dropdownIconColor={colors.text}
-                >
-                  {categories.map((cat) => (
-                    <Picker.Item key={cat} label={cat} value={cat} />
-                  ))}
-                </Picker>
+              <Text style={styles.label}>Categories</Text>
+              <View style={styles.chipRow}>
+                {categories.map((cat) => {
+                  const active = selectedCategories.includes(cat);
+                  return (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[styles.chip, active && styles.chipActive]}
+                      onPress={() => toggleCategory(cat)}
+                    >
+                      <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
           </View>
@@ -419,15 +431,30 @@ const makeStyles = (colors: ColorPalette) => StyleSheet.create({
   rowDesktop: {
     flexDirection: 'row',
   },
-  picker: {
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  chip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.xl,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: borderRadius.sm,
-    overflow: 'hidden',
-    paddingHorizontal: spacing.sm,
-    minHeight: 48,
-    justifyContent: 'center',
+  },
+  chipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  chipText: {
+    fontSize: fontSizes.sm,
+    color: colors.text,
+  },
+  chipTextActive: {
+    color: colors.surface,
+    fontWeight: '600',
   },
   saveButton: {
     marginTop: spacing.md,

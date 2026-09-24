@@ -38,7 +38,6 @@ Key facts:
 | Styling | React Native `StyleSheet` | Design tokens in `src/constants/theme.ts` |
 | Icons | `@expo/vector-icons` | Ionicons glyph set |
 | Image handling | `expo-image-picker`, `expo-image-manipulator` | Admin product images; multi-image gallery support |
-| Picker | `@react-native-picker/picker` | Category selector |
 | Telegram SDK | `@tma.js/sdk`, `@tma.js/sdk-react` | Mini App initialization, theme, viewport, MainButton, BackButton |
 
 Always consult the exact versioned docs before writing code: <https://docs.expo.dev/versions/v54.0.0/> and <https://docs.telegram-mini-apps.com/>.
@@ -56,9 +55,21 @@ Always consult the exact versioned docs before writing code: <https://docs.expo.
 ├── tsconfig.json                   # Extends expo/tsconfig.base, strict: true
 ├── start-app.bat                   # Windows quick-start helper
 ├── assets/                         # App icons, splash, favicon
+├── scripts/
+│   ├── import-channel.js           # One-time backfill: Telegram channel history → products (--dry-run, --prune)
+│   ├── suggest-names.js            # AI naming/categorizing of imported products via Kimi vision
+│   ├── get-chat-id.js              # Resolves ADMIN_TELEGRAM_CHAT_ID via the bot's getUpdates
+│   ├── set-webhook.js              # Registers the Telegram webhook for live channel sync
+│   ├── reset-data.js
+│   └── setup-admin.js
 ├── supabase/
+│   ├── functions/
+│   │   ├── send-order-notification/  # Order DM notification
+│   │   └── telegram-webhook/         # Live sync: new/edited channel posts → products
 │   └── migrations/
-│       └── 001_initial_schema.sql  # Supabase tables, RLS, storage bucket
+│       ├── 001_initial_schema.sql  # Supabase tables, RLS, storage bucket
+│       └── 002_telegram_sync.sql   # telegram_message_ids, is_draft, telegram_pending_posts
+│       └── 003_multi_category.sql  # products.category → products.categories text[]
 └── src/
     ├── components/                 # Reusable UI components
     │   ├── AdminHeader.tsx         # Web-only admin navigation header
@@ -186,8 +197,8 @@ Param lists are defined in `src/types/navigation.ts`.
 
 ### Data model
 
-- `Product`: `id`, `name`, `description`, `price`, `category`, `images` (string array), `coverImageIndex`, `createdAt`
-- `Category`: arbitrary string; defaults are `Clothing`, `Books`, `Sports`, `Electronics`, `Accessories`
+- `Product`: `id`, `name`, `description`, `price`, `categories` (string array), `images` (string array), `coverImageIndex`, `createdAt`
+- `Category`: arbitrary string; a product can have several. Shoppers filter by one category at a time; a product matches if the selected category is among its categories.
 
 ### Images
 
@@ -218,8 +229,49 @@ AsyncStorage is only used for the local cache and theme:
    EXPO_PUBLIC_SUPABASE_ANON_KEY=<your-anon-public-key>
    ```
 4. Run the migration in `supabase/migrations/001_initial_schema.sql` from the Supabase SQL Editor.
-5. Build the web export (`npx expo export --platform web`) and deploy the `dist/` folder to a public HTTPS URL.
-6. Register the deployed URL as a Telegram Mini App with BotFather (`/myapps` or `/newapp`).
+5. Run the migration in `supabase/migrations/002_telegram_sync.sql` (Telegram sync columns + pending buffer).
+6. Build the web export (`npx expo export --platform web`) and deploy the `dist/` folder to a public HTTPS URL.
+7. Register the deployed URL as a Telegram Mini App with BotFather (`/myapps` or `/newapp`).
+
+---
+
+## Telegram channel sync
+
+Products can be imported automatically from the Telegram sales channel:
+
+- **Backfill** — `node scripts/import-channel.js` reads the full channel history via the
+  user-client API (GramJS) and creates one product per group. A post WITH a caption anchors a
+  group and includes any immediately preceding caption-less photo posts (albums included).
+  Price is parsed from a `Price: 25$` line; imported items are named `No name yet` with empty
+  categories (filled in later by `scripts/suggest-names.js` or the admin panel).
+  Safe to re-run (dedupes on stored message IDs).
+  `--dry-run` prints groups without writing; `--prune` deletes products whose channel posts
+  were removed. First run needs an interactive login (write the Telegram code into
+  `.telegram-login-code`; the session is saved to `TELEGRAM_SESSION` in `.env`).
+- **AI naming** — `node scripts/suggest-names.js` sends each unnamed product's cover image to
+  the Kimi vision model (`kimi-k3`) and fills in a short name plus 1–2 categories from the
+  live category list. `--propose-categories --sample=N` instead aggregates free-form category
+  suggestions from a sample to propose a taxonomy (writes nothing); `--dry-run` prints
+  suggestions without writing. Images are downloaded through `TELEGRAM_PROXY` (*.supabase.co
+  is blocked direct on some networks) and sent as base64; DB access uses the Supabase
+  Management API (`SUPABASE_ACCESS_TOKEN`). The Moonshot account is limited to 3 RPM, so the
+  script paces itself (~21s per product).
+- **Live sync** — `supabase/functions/telegram-webhook` receives `channel_post` /
+  `edited_channel_post` updates. Caption-less photos are buffered in
+  `telegram_pending_posts`; a captioned post publishes one product with all buffered images
+  after a ~45s debounce (to catch late album members). New-style captions are structured:
+  line 1 = name, line 2 = categories (comma-separated, matched against the category list),
+  line 3 = price. Unparseable captions become drafts
+  (`is_draft = true`, hidden from shoppers, badged in the admin dashboard) and the admin is
+  notified by bot DM. Editing a captioned post updates the product. Telegram sends no delete
+  events for channel posts — use `--prune` for that.
+- Setup: run migration 002, deploy the function (`verify_jwt = false` is set in
+  `supabase/config.toml`), `supabase secrets set TELEGRAM_BOT_TOKEN ADMIN_TELEGRAM_CHAT_ID
+  WEBHOOK_SECRET TELEGRAM_CHANNEL`, then `node scripts/set-webhook.js`. The bot must be a
+  channel admin.
+- Local scripts may need `TELEGRAM_PROXY` (e.g. `http://127.0.0.1:7890`) where Telegram is
+  blocked. The deployed edge function does not.
+
 
 ---
 
