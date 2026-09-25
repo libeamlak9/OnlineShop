@@ -71,6 +71,10 @@ export function AddEditItemScreen() {
     );
   }
 
+  // Include the product's current categories even if they are no longer in
+  // the global category list, so stale categories can be toggled off.
+  const categoryOptions = Array.from(new Set([...categories, ...selectedCategories]));
+
   async function pickImages() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -244,7 +248,7 @@ export function AddEditItemScreen() {
             <View style={[styles.field, isDesktop && styles.flex]}>
               <Text style={styles.label}>Categories</Text>
               <View style={styles.chipRow}>
-                {categories.map((cat) => {
+                {categoryOptions.map((cat) => {
                   const active = selectedCategories.includes(cat);
                   return (
                     <TouchableOpacity
